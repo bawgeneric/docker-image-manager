@@ -1,0 +1,27 @@
+version: 0.1
+log:
+  fields:
+    service: registry
+storage:
+    cache:
+        blobdescriptor: inmemory
+    filesystem:
+        rootdirectory: /var/lib/registry
+http:
+    addr: :5000
+    headers:
+        X-Content-Type-Options: [nosniff]
+health:
+  storagedriver:
+    enabled: true
+    interval: 10s
+    threshold: 3
+notifications:
+    endpoints:
+      - name: alistener
+        url: http://192.168.1.30:8080/events
+        headers:
+          Authorization: [Registry]
+        timeout: 500ms
+        threshold: 5
+        backoff: 1s
