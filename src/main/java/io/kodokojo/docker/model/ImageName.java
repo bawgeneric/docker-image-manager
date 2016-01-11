@@ -109,5 +109,26 @@ public class ImageName {
                 ", tags=" + tags +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ImageName imageName = (ImageName) o;
+
+        if (namespace != null ? !namespace.equals(imageName.namespace) : imageName.namespace != null) return false;
+        if (!name.equals(imageName.name)) return false;
+        return tag != null ? tag.equals(imageName.tag) : imageName.tag == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = namespace != null ? namespace.hashCode() : 0;
+        result = 31 * result + name.hashCode();
+        result = 31 * result + (tag != null ? tag.hashCode() : 0);
+        return result;
+    }
 }
 

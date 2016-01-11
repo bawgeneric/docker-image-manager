@@ -2,7 +2,7 @@ package io.kodokojo.docker.service.actor;
 
 import akka.actor.AbstractActor;
 import akka.japi.pf.ReceiveBuilder;
-import io.kodokojo.docker.model.PushEvent;
+import io.kodokojo.docker.model.RegistryEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +15,7 @@ public class PushPrinter extends AbstractActor {
 
 
     public PushPrinter() {
-        receive(ReceiveBuilder.match(PushEvent.class, p -> {
+        receive(ReceiveBuilder.match(RegistryEvent.class, p -> {
                     LOGGER.info("Listener receive Push event {}", p);
                 }).matchAny(o -> LOGGER.error("Listener Unexpected object receive {}.", o))
                         .build()

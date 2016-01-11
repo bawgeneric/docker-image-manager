@@ -8,15 +8,16 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Created by jpthiery on 08/01/2016.
- */
-
 public class StringToImageNameConverter implements Function<String, ImageName> {
 
     public static final Pattern IMAGENAME_PATTERN = Pattern.compile("([^/:\\s]+)(?:/([^:\\s]+))?(?::([^\\s]+))?");
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StringToImageNameConverter.class);
+
+    public static ImageName convert(String input) {
+        StringToImageNameConverter converter = new StringToImageNameConverter();
+        return converter.apply(input);
+    }
 
     @Override
     public ImageName apply(String input) {
