@@ -9,7 +9,6 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
-import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
@@ -112,7 +111,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
             throw new IllegalStateException("Library directory " + libraryDirectory.getAbsolutePath() + " seems to not exist anymore.");
         }
 
-        List<DockerfileEntry> dockerfileEntries = new ArrayList<>();
+        List<DockerFileEntry> dockerfileEntries = new ArrayList<>();
 
         List<File> namespaces = Arrays.asList(libraryDirectory.listFiles()).stream().filter(File::isDirectory).collect(Collectors.toList());
         for (File namespace : namespaces) {
@@ -124,7 +123,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
             }
         }
 
-        for (DockerfileEntry entry : dockerfileEntries) {
+        for (DockerFileEntry entry : dockerfileEntries) {
             DockerFile dockerFile = fetchDockerFileFromGitRepository(entry);
             if (dockerFile != null) {
                 if (LOGGER.isDebugEnabled()) {
@@ -138,12 +137,13 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
 
     @Override
     public void fetchDockerFile(ImageName imageName) {
-
+        //  TODO Finish that method!
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
-    private List<DockerfileEntry> convertBashbrewFileToDockerfileEntries(File libraryFile, ImageNameBuilder imageNameBuilder) {
+    private List<DockerFileEntry> convertBashbrewFileToDockerfileEntries(File libraryFile, ImageNameBuilder imageNameBuilder) {
         assert libraryFile != null && libraryFile.canRead() : "libraryFile must be define a readable";
-        List<DockerfileEntry> res = new ArrayList<>();
+        List<DockerFileEntry> res = new ArrayList<>();
 
         try {
             String content = FileUtils.readFileToString(libraryFile);
@@ -156,7 +156,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
                     if (StringUtils.isNotBlank(defaultUser) && !gitUrl.contains("@")) {
                         gitUrl = defaultUser + "@" + gitUrl;
                     }
-                    DockerfileEntry entry = new DockerfileEntry(imageName, gitUrl, matcher.group(3), matcher.group(4));
+                    DockerFileEntry entry = new DockerFileEntry(imageName, gitUrl, matcher.group(3), matcher.group(4));
                     res.add(entry);
                 }
             }
@@ -167,7 +167,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
         return res;
     }
 
-    private DockerFile fetchDockerFileFromGitRepository(DockerfileEntry entry) {
+    private DockerFile fetchDockerFileFromGitRepository(DockerFileEntry entry) {
         assert entry != null : "entry must be defined";
 
         ImageName imageName = entry.getImageName();
@@ -210,7 +210,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
     }
 
     //Source : https://github.com/centic9/jgit-cookbook/blob/master/src/main/java/org/dstadler/jgit/api/ReadFileFromCommit.java
-    private String getFileContent(Repository repository, DockerfileEntry entry) {
+    private String getFileContent(Repository repository, DockerFileEntry entry) {
         String res = null;
         try (RevWalk revWalk = new RevWalk(repository)) {
             ObjectId lastCommitId = repository.resolve(entry.getGitRef());
@@ -252,7 +252,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
         return res;
     }
 
-    private class DockerfileEntry {
+    private class DockerFileEntry {
 
         private final ImageName imageName;
 
@@ -262,7 +262,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
 
         private final String dockerFilePath;
 
-        public DockerfileEntry(ImageName imageName, String gitUrl, String gitRef, String dockerFilePath) {
+        public DockerFileEntry(ImageName imageName, String gitUrl, String gitRef, String dockerFilePath) {
             this.imageName = imageName;
             this.gitUrl = gitUrl;
             this.gitRef = gitRef;
@@ -287,7 +287,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
 
         @Override
         public String toString() {
-            return "DockerfileEntry{" +
+            return "DockerFileEntry{" +
                     "imageName='" + imageName + '\'' +
                     ", gitUrl='" + gitUrl + '\'' +
                     ", gitRef='" + gitRef + '\'' +
