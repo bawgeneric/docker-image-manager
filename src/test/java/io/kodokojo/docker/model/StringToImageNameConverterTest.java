@@ -68,4 +68,37 @@ public class StringToImageNameConverterTest {
         assertThat(res.getTag()).isEqualTo("2.1.3-beta");
     }
 
+    @Test
+    public void valide_with_repository_with_name_and_tag() {
+        String input = "dockerregistry.kodokojo.io:5000/grafana:2.1.3-beta";
+        ImageName res = converter.apply(input);
+
+        assertThat(res).isNotNull();
+        assertThat(res.getRepository()).isNotEmpty();
+        assertThat(res.getRepository()).isEqualTo("dockerregistry.kodokojo.io:5000");
+        assertThat(res.getNamespace()).isNotEmpty();
+        assertThat(res.getNamespace()).isEqualTo("library");
+        assertThat(res.getName()).isNotEmpty();
+        assertThat(res.getName()).isEqualTo("grafana");
+        assertThat(res.getTag()).isNotEmpty();
+        assertThat(res.getTag()).isEqualTo("2.1.3-beta");
+    }
+    @Test
+    public void valide_with_repository_with_namespace_with_name_and_tag() {
+        String input = "dockerregistry.kodokojo.io:5000/jpthiery/grafana:2.1.3-beta";
+        ImageName res = converter.apply(input);
+
+        assertThat(res).isNotNull();
+        assertThat(res.getRepository()).isNotEmpty();
+        assertThat(res.getRepository()).isEqualTo("dockerregistry.kodokojo.io:5000");
+        assertThat(res.getNamespace()).isNotEmpty();
+        assertThat(res.getNamespace()).isEqualTo("jpthiery");
+        assertThat(res.getName()).isNotEmpty();
+        assertThat(res.getName()).isEqualTo("grafana");
+        assertThat(res.getTag()).isNotEmpty();
+        assertThat(res.getTag()).isEqualTo("2.1.3-beta");
+    }
+
+
+
 }

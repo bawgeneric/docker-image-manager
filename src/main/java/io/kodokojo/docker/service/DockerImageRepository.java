@@ -9,6 +9,10 @@ public interface DockerImageRepository {
 
     boolean addLayer(ImageName imageName, Layer layer);
 
+    boolean addLayer(Set<ImageName> imageNames, Layer layer);
+
     Set<Layer> getlayer(ImageName imageName);
+
+    Set<ImageName> getImageNamesFromLayer(Layer layer);
 
 }

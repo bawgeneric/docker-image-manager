@@ -3,6 +3,9 @@ package io.kodokojo.docker.model;
 import io.kodokojo.docker.model.DockerFile;
 import io.kodokojo.docker.model.ImageName;
 import io.kodokojo.docker.model.StringToImageNameConverter;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -14,6 +17,8 @@ import static org.apache.commons.lang.StringUtils.isBlank;
 
 public class StringToDockerFileConverter  {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(StringToDockerFileConverter.class);
+
     private static final Pattern FROM_PATTERN = Pattern.compile("^FROM (.*)$");
 
     private static final Pattern MAINTAINER_PATTERN = Pattern.compile("^MAINTAINER (.*)$");
@@ -24,6 +29,9 @@ public class StringToDockerFileConverter  {
         }
         if (isBlank(content)) {
             throw new IllegalArgumentException("content must be defined.");
+        }
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Try to convert image {} with following content: \n{}", imageName.getFullyQualifiedName(), content);
         }
         String[] splitted = content.split("\n");
         List<String> lines = Arrays.asList(splitted);
@@ -42,7 +50,8 @@ public class StringToDockerFileConverter  {
                 }
             }
         }
-        DockerFile res = new DockerFile(imageName, StringToImageNameConverter.convert(from), maintainer);
+        ImageName fromImageName = StringUtils.isNotBlank(from) ? StringToImageNameConverter.convert(from) : null;
+        DockerFile res = new DockerFile(imageName, fromImageName, maintainer);
         return res;
     }
 

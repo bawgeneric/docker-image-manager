@@ -1,16 +1,24 @@
 package io.kodokojo.docker.model;
 
+import io.kodokojo.docker.utils.DockerImageNameBaseListener;
+import io.kodokojo.docker.utils.DockerImageNameLexer;
+import io.kodokojo.docker.utils.DockerImageNameParser;
+import org.antlr.v4.runtime.ANTLRErrorStrategy;
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.misc.NotNull;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StringToImageNameConverter implements Function<String, ImageName> {
-
-    public static final Pattern IMAGENAME_PATTERN = Pattern.compile("([^/:\\s]+)(?:/([^:\\s]+))?(?::([^\\s]+))?");
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StringToImageNameConverter.class);
 
@@ -24,51 +32,59 @@ public class StringToImageNameConverter implements Function<String, ImageName> {
         if (StringUtils.isBlank(input)) {
             throw new IllegalArgumentException("input  must be defined.");
         }
+        input = input.trim();
+        if (!input.endsWith("\n")) {
+            input += "\n";
+        }
+        try {
+            ANTLRInputStream antlrInputStream = new ANTLRInputStream(input);
+            DockerImageNameLexer lexer = new DockerImageNameLexer(antlrInputStream);
+            lexer.removeErrorListeners();
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            DockerImageNameParser parser = new DockerImageNameParser(tokens);
+            DockerImageAntlrListener listener = new DockerImageAntlrListener();
+            parser.addParseListener(listener);
+            parser.removeErrorListeners();
+            parser.imageName();
 
-        Matcher matcher = IMAGENAME_PATTERN.matcher(input);
-        if (matcher.find()) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Find {} groups for input {}.",  matcher.groupCount(), input);
-            }
 
-            if (LOGGER.isTraceEnabled()) {
-                for (int i = 1; i <= matcher.groupCount(); i++) {
-                    String group = matcher.group(i);
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Group {} : {}", i, group);
-                    }
+            return listener.getImageName();
+        } catch (RecognitionException e) {
+            LOGGER.debug("Unable to parse following image name '{}'", input);
+            return null;
+        } catch (RuntimeException e ) {
 
-                }
-            }
+            LOGGER.debug("Unable to parse following image name '{}'", input);
+            return null;
+        }
+    }
 
-            String namespace = null;
-            String name = null;
-            String tag = null;
+    private class DockerImageAntlrListener extends DockerImageNameBaseListener {
 
-            String gA = matcher.group(1);
-            String gB = matcher.group(2);
-            String gC = matcher.group(3);
+        private ImageNameBuilder builder = new ImageNameBuilder();
 
-            if (gB == null && gC == null) {
-                name = gA;
-            } else if (gB == null || gC == null) {
-                if (input.contains("/")) {
-                    namespace = gA;
-                    name = gB;
-                } else if (input.contains(":")) {
-                    name = gA;
-                    tag = gC;
-                }
-            } else  {
-                namespace = gA;
-                name = gB;
-                tag = gC;
-
-            }
-
-            return new ImageName(namespace, name, tag);
+        @Override
+        public void exitNamespace(@NotNull DockerImageNameParser.NamespaceContext ctx) {
+            builder.setNamespace(ctx.getText());
         }
 
-        return null;
+        @Override
+        public void exitName(@NotNull DockerImageNameParser.NameContext ctx) {
+            builder.setName(ctx.getText());
+        }
+
+        @Override
+        public void exitTag(@NotNull DockerImageNameParser.TagContext ctx) {
+            builder.setTag(ctx.getText());
+        }
+
+        @Override
+        public void exitRepository(@NotNull DockerImageNameParser.RepositoryContext ctx) {
+            builder.setRepository(ctx.getText());
+        }
+
+        public ImageName getImageName() {
+            return builder.build();
+        }
     }
 }

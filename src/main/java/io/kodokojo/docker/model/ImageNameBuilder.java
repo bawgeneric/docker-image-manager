@@ -4,6 +4,8 @@ import org.apache.commons.lang.StringUtils;
 
 public class ImageNameBuilder {
 
+    private String repository;
+
     private String namespace;
 
     private String name;
@@ -18,7 +20,12 @@ public class ImageNameBuilder {
         if (StringUtils.isBlank(name)) {
             throw new IllegalArgumentException("name  must be defined.");
         }
-        return new ImageName(namespace, name, tag);
+        return new ImageName(repository, namespace, name, tag);
+    }
+
+    public ImageNameBuilder setRepository(String repository) {
+        this.repository = repository;
+        return this;
     }
 
     public ImageNameBuilder setNamespace(String namespace) {

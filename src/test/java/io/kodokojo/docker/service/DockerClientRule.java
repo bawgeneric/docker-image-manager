@@ -21,7 +21,8 @@ public class DockerClientRule extends ExternalResource {
     public DockerClientRule() {
         dockerClient = DockerClientBuilder.getInstance().build();
         if (isNotWorking(dockerClient)) {
-            DockerClientConfig config = DockerClientConfig.createDefaultConfigBuilder().withUri("https://192.168.99.100:2376").withDockerCertPath("/Users/jpthiery/.docker/machine/machines/default").build();
+            String userHome = System.getProperty("user.home");
+            DockerClientConfig config = DockerClientConfig.createDefaultConfigBuilder().withUri("https://192.168.99.100:2376").withDockerCertPath(userHome + "/.docker/machine/machines/default").build();
             dockerClient = DockerClientBuilder.getInstance(config).build();
         }
         containerToClean = new ArrayList<>();

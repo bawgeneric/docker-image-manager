@@ -12,6 +12,8 @@ public class ImageName {
 
     private static final String DEFAULT_NAMESPACE = "library";
 
+    private final String repository;
+
     private final String namespace;
 
     private final String name;
@@ -20,7 +22,8 @@ public class ImageName {
 
     private final List<String> tags;
 
-    public ImageName(String namespace, String name, String tag) {
+    public ImageName(String repository, String namespace, String name, String tag){
+        this.repository = repository;
         if (StringUtils.isBlank(namespace)) {
             this.namespace = DEFAULT_NAMESPACE;
         } else {
@@ -33,7 +36,13 @@ public class ImageName {
         this.tag = tag;
         this.tags = Collections.singletonList(tag);
     }
-    public ImageName(String namespace, String name, List<String> tags) {
+
+    public ImageName(String namespace, String name, String tag) {
+        this(null, namespace, name, tag);
+    }
+
+    public ImageName(String repository, String namespace, String name, List<String> tags) {
+        this.repository = repository;
         if (StringUtils.isBlank(namespace)) {
             this.namespace = DEFAULT_NAMESPACE;
         } else {
@@ -48,6 +57,10 @@ public class ImageName {
         this.name = name;
         this.tag = null;
         this.tags = tags;
+
+    }
+    public ImageName(String namespace, String name, List<String> tags) {
+        this(null, namespace, name, tags);
     }
 
     public ImageName(String namespace, String name) {
@@ -63,7 +76,18 @@ public class ImageName {
     }
 
     public String getFullyQualifiedName() {
-        return StringUtils.isBlank(tag) ? String.format("%s/%s", namespace, name) : String.format("%s/%s:%s", namespace, name, tag);
+        StringBuilder sb = new StringBuilder();
+        if (StringUtils.isNotBlank(repository)) {
+            sb.append(repository).append("/");
+        }
+        if (StringUtils.isNotBlank(namespace)) {
+            sb.append(namespace).append("/");
+        }
+        sb.append(name);
+        if (StringUtils.isNotBlank(tag)) {
+            sb.append(":").append(tag);
+        }
+        return sb.toString();
     }
 
     public String getShortNameWithoutTag() {
@@ -84,6 +108,10 @@ public class ImageName {
         return sb.toString();
     }
 
+    public String getRepository() {
+        return repository;
+    }
+
     public String getNamespace() {
         return namespace;
     }
@@ -101,23 +129,14 @@ public class ImageName {
     }
 
     @Override
-    public String toString() {
-        return "ImageName{" +
-                "namespace='" + namespace + '\'' +
-                ", name='" + name + '\'' +
-                ", tag='" + tag + '\'' +
-                ", tags=" + tags +
-                '}';
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         ImageName imageName = (ImageName) o;
 
-        if (namespace != null ? !namespace.equals(imageName.namespace) : imageName.namespace != null) return false;
+        if (repository != null ? !repository.equals(imageName.repository) : imageName.repository != null) return false;
+        if (!namespace.equals(imageName.namespace)) return false;
         if (!name.equals(imageName.name)) return false;
         return tag != null ? tag.equals(imageName.tag) : imageName.tag == null;
 
@@ -125,10 +144,22 @@ public class ImageName {
 
     @Override
     public int hashCode() {
-        int result = namespace != null ? namespace.hashCode() : 0;
+        int result = repository != null ? repository.hashCode() : 0;
+        result = 31 * result + namespace.hashCode();
         result = 31 * result + name.hashCode();
         result = 31 * result + (tag != null ? tag.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ImageName{" +
+                "repository='" + repository + '\'' +
+                ", namespace='" + namespace + '\'' +
+                ", name='" + name + '\'' +
+                ", tag='" + tag + '\'' +
+                ", tags=" + tags +
+                '}';
     }
 }
 

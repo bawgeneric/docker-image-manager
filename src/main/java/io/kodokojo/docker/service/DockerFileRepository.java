@@ -4,12 +4,13 @@ import io.kodokojo.docker.model.DockerFile;
 import io.kodokojo.docker.model.ImageName;
 
 import java.util.List;
+import java.util.Set;
 
 public interface DockerFileRepository {
 
     DockerFile getDockerFileInheriteFrom(DockerFile dockerFile);
 
-    List<DockerFile> getDockerFileChildOf(DockerFile dockerFile);
+    Set<DockerFile> getDockerFileChildOf(DockerFile dockerFile);
 
     DockerFile getDockerFileFromImageName(ImageName imageName);
 

@@ -15,9 +15,9 @@ public class DefaultDockerFileRepository implements DockerFileRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultDockerFileRepository.class);
 
-    private final Map<ImageName,List<DockerFile>> dependencies;
+    private final Map<ImageName, Set<DockerFile>> dependencies;
 
-    private final Map<ImageName,DockerFile> dockerFiles;
+    private final Map<ImageName, DockerFile> dockerFiles;
 
     private final ReentrantReadWriteLock.WriteLock writeLock;
 
@@ -36,13 +36,29 @@ public class DefaultDockerFileRepository implements DockerFileRepository {
         if (dockerFile == null) {
             throw new IllegalArgumentException("dockerFile must be defined.");
         }
-
-        return null;
+        readLock.lock();
+        try {
+            DockerFile current = dockerFiles.get(dockerFile.getImageName());
+            if (dockerFile.getFrom() == null) {
+                throw new IllegalStateException("Dockerfile " + current + " don't have current from image declaration.");
+            }
+            return dockerFiles.get(current.getFrom());
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
-    public List<DockerFile> getDockerFileChildOf(DockerFile dockerFile) {
-        return null;
+    public Set<DockerFile> getDockerFileChildOf(DockerFile dockerFile) {
+        if (dockerFile == null) {
+            throw new IllegalArgumentException("dockerFile must be defined.");
+        }
+        readLock.lock();
+        try {
+            return dependencies.get(dockerFile.getImageName());
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
@@ -73,23 +89,33 @@ public class DefaultDockerFileRepository implements DockerFileRepository {
         }
         writeLock.lock();
         try {
-            ArrayList<DockerFile> value = new ArrayList<>();
+            Set<DockerFile> value = new HashSet<>();
             dockerFiles.put(dockerFile.getImageName(), dockerFile);
-            List<DockerFile> previous = dependencies.put(dockerFile.getImageName(), value);
+            Set<DockerFile> previous = dependencies.put(dockerFile.getImageName(), value);
             if (CollectionUtils.isNotEmpty(previous)) {
                 value.addAll(previous);
             }
             ImageName from = dockerFile.getFrom();
             if (from != null) {
-                List<DockerFile> children = dependencies.get(from);
-                if (children != null) {
-                    if (!children.contains(dockerFile)) {
-                        children.add(dockerFile);
+                Set<DockerFile> children = dependencies.get(from);
+                if (children == null) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Unable to find dockerfile parent {}, create a default one.", from.getFullyQualifiedName());
                     }
-                } else {
-                    LOGGER.info("Not able to found DockerFile parent {} in repository", from);
+                    children = new HashSet<>();
+                    DockerFile defaultParent = new DockerFile(from);
+                    dockerFiles.put(from, defaultParent);
+                } else if (!children.contains(dockerFile)) {
+                    children.add(dockerFile);
                 }
             }
+            Set<DockerFile> dockerfileChildren = dependencies.get(dockerFile.getImageName());
+            this.dockerFiles.values().stream().filter(potentialChild -> dockerFile.getImageName().equals(potentialChild.getFrom())).forEach(potentialChild -> {
+                if (LOGGER.isDebugEnabled() && !dockerfileChildren.contains(potentialChild)) {
+                    LOGGER.debug("Current Dockerfile {} is defined as parent of image {}", dockerFile, potentialChild);
+                }
+                dockerfileChildren.add(potentialChild);
+            });
         } finally {
             writeLock.unlock();
         }

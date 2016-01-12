@@ -18,7 +18,7 @@ public class PushEventChecker extends AbstractActor {
     private final DockerImageRepository dockerImageRepository;
 
     @Inject
-    public PushEventChecker(DockerImageRepository dockerImageRepository) {
+    public PushEventChecker(DockerImageRepository dockerImageRepository, ActorRef dependencyDockerfileUpdateDispatcher) {
         if (dockerImageRepository == null) {
             throw new IllegalArgumentException("dockerImageRepository must be defined.");
         }
@@ -28,8 +28,7 @@ public class PushEventChecker extends AbstractActor {
                     ImageName name = event.getImage().getName();
                     boolean alreadyExist = this.dockerImageRepository.addLayer(name, event.getSpecificLayer());
                     if (!alreadyExist) {
-                        ActorRef dependencyDispatcher = getContext().actorOf(Props.create(DependencyDockerfileUpdateDispatcher.class));
-                        dependencyDispatcher.tell(event, self());
+                        dependencyDockerfileUpdateDispatcher.tell(event, self());
                     } else if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Receive a push event for docker image {} which already exist.", name.getFullyQualifiedName());
                     }

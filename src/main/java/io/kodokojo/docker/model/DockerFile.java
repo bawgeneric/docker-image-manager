@@ -44,6 +44,22 @@ public class DockerFile {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DockerFile that = (DockerFile) o;
+
+        return imageName.equals(that.imageName);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return imageName.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "DockerFile{" +
                 "imageName=" + imageName +
