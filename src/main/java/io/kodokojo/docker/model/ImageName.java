@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class ImageName {
 
-    private static final String DEFAULT_NAMESPACE = "library";
+    public static final String DEFAULT_NAMESPACE = "library";
 
     private final String repository;
 
@@ -59,6 +59,11 @@ public class ImageName {
         this.tags = tags;
 
     }
+
+    public boolean isRootImage() {
+        return DEFAULT_NAMESPACE.equals(namespace);
+    }
+
     public ImageName(String namespace, String name, List<String> tags) {
         this(null, namespace, name, tags);
     }

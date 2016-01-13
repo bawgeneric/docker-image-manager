@@ -20,6 +20,35 @@ public class GitBashbrewDockerFileFetcherIntTest {
     public TemporaryFolder tmpFolder = new TemporaryFolder();
 
     @Test
+    public void fetch_kodokojo_busybox_dockerfile() throws IOException {
+        String libraryPath = "bashbrew/library";
+        File workspace = tmpFolder.newFolder();
+        DefaultDockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
+        DockerFileFetcher dockerFileFetcher = new GitBashbrewDockerFileFetcher(workspace.getAbsolutePath(), "git", gitUrl, libraryPath, dockerFileRepository);
+
+        dockerFileFetcher.fetchDockerFile(StringToImageNameConverter.convert("kodokojo/busybox"));
+
+        DockerFile dockerFile = dockerFileRepository.getDockerFileFromImageName(StringToImageNameConverter.convert("kodokojo/busybox:latest"));
+        assertThat(dockerFile).isNotNull();
+        assertThat(dockerFile.getFrom().getFullyQualifiedName()).isEqualTo("library/centos:7");
+
+    }
+    @Test
+    public void fetch_kodokojo_busybox_specific_tag_dockerfile() throws IOException {
+        String libraryPath = "bashbrew/library";
+        File workspace = tmpFolder.newFolder();
+        DefaultDockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
+        DockerFileFetcher dockerFileFetcher = new GitBashbrewDockerFileFetcher(workspace.getAbsolutePath(), "git", gitUrl, libraryPath, dockerFileRepository);
+
+        dockerFileFetcher.fetchDockerFile(StringToImageNameConverter.convert("kodokojo/busybox:1.0.0"));
+
+        DockerFile dockerFile = dockerFileRepository.getDockerFileFromImageName(StringToImageNameConverter.convert("kodokojo/busybox:1.0.0"));
+        assertThat(dockerFile).isNotNull();
+        assertThat(dockerFile.getFrom().getFullyQualifiedName()).isEqualTo("library/centos");
+
+    }
+
+    @Test
     public void fetch_all_dockerfile() throws IOException {
         String libraryPath = "bashbrew/library";
 
@@ -31,9 +60,7 @@ public class GitBashbrewDockerFileFetcherIntTest {
 
         DockerFile dockerFile = dockerFileRepository.getDockerFileFromImageName(StringToImageNameConverter.convert("kodokojo/busybox:latest"));
         assertThat(dockerFile).isNotNull();
-        assertThat(dockerFile.getFrom().getFullyQualifiedName()).isEqualTo("library/centos");
-        tmpFolder.delete();
-
+        assertThat(dockerFile.getFrom().getFullyQualifiedName()).isEqualTo("library/centos:7");
     }
 
 }

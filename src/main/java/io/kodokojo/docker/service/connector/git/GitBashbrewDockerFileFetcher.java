@@ -7,7 +7,6 @@ import io.kodokojo.docker.model.StringToDockerFileConverter;
 import io.kodokojo.docker.service.DockerFileRepository;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
@@ -32,12 +31,10 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
@@ -106,18 +103,28 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
             throw new IllegalStateException("Library directory " + libraryDirectory.getAbsolutePath() + " seems to not exist anymore.");
         }
 
-        pullRepository();
+        pullBashbrewRepository();
 
         List<DockerFileEntry> dockerFileEntries = new ArrayList<>();
-        System.out.println("RootPath : "+libraryDirectory.getPath());
-        FileUtils.listFilesAndDirs(libraryDirectory, DirectoryFileFilter.DIRECTORY, TrueFileFilter.INSTANCE).forEach(namespaceTmp -> {
-            FileUtils.listFiles(namespaceTmp, TrueFileFilter.TRUE, null).forEach(nameTmp -> {
+
+        FileUtils.listFilesAndDirs(libraryDirectory, DirectoryFileFilter.DIRECTORY, TrueFileFilter.INSTANCE).forEach(namespace -> {
+            FileUtils.listFiles(namespace, TrueFileFilter.TRUE, null).forEach(name -> {
                 ImageNameBuilder imageNameBuilder = new ImageNameBuilder();
-                imageNameBuilder.setNamespace(namespaceTmp.getName()).setName(nameTmp.getName());
-                dockerFileEntries.addAll(convertBashbrewFileToDockerfileEntries(nameTmp, imageNameBuilder));
+                imageNameBuilder.setNamespace(namespace.getName()).setName(name.getName());
+                try {
+                    String dockerFileContent = FileUtils.readFileToString(name);
+                    dockerFileEntries.addAll(convertBashbrewFileToDockerfileEntries(dockerFileContent, null, imageNameBuilder));
+                } catch (IOException e) {
+                    LOGGER.error("Unable to read content of file " + name.getAbsolutePath(), e);
+                }
             });
         });
 
+        addDockerFilesToDockerFileRepository(dockerFileEntries);
+
+    }
+
+    private void addDockerFilesToDockerFileRepository(List<DockerFileEntry> dockerFileEntries) {
         for (DockerFileEntry entry : dockerFileEntries) {
             DockerFile dockerFile = fetchDockerFileFromGitRepository(entry);
             if (dockerFile != null) {
@@ -127,27 +134,49 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
                 dockerFileRepository.addDockerFile(dockerFile);
             }
         }
-
     }
 
 
     @Override
     public void fetchDockerFile(ImageName imageName) {
-        //  TODO Finish that method!
-        throw new UnsupportedOperationException("Not yet implemented");
+        if (imageName == null) {
+            throw new IllegalArgumentException("imageName must be defined.");
+        }
+
+        pullBashbrewRepository();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(libraryDirectory.getAbsolutePath()).append(File.separator);
+        if (!imageName.isRootImage()) {
+            sb.append(imageName.getNamespace()).append(File.separator);
+        }
+        sb.append(imageName.getName());
+        String libraryFilePath = sb.toString();
+        File libraryFile = new File(libraryFilePath);
+        try {
+            String libraryFileContent = FileUtils.readFileToString(libraryFile);
+            ImageNameBuilder imageNameBuilder = new ImageNameBuilder();
+            imageNameBuilder.setNamespace(imageName.getNamespace());
+            imageNameBuilder.setName(imageName.getName());
+            List<DockerFileEntry> dockerFileEntries = convertBashbrewFileToDockerfileEntries(libraryFileContent, StringUtils.isBlank(imageName.getTag()) ? null : imageName.getTag(), imageNameBuilder);
+            addDockerFilesToDockerFileRepository(dockerFileEntries);
+        } catch (IOException e) {
+            LOGGER.error("Unable to read content of file " + libraryFile.getAbsolutePath(), e);
+        }
     }
 
-    private List<DockerFileEntry> convertBashbrewFileToDockerfileEntries(File libraryFile, ImageNameBuilder imageNameBuilder) {
-        assert libraryFile != null && libraryFile.canRead() : "libraryFile must be define a readable";
+    private List<DockerFileEntry> convertBashbrewFileToDockerfileEntries(String libraryFileContent, String tag, ImageNameBuilder imageNameBuilder) {
+        assert StringUtils.isNotBlank(libraryFileContent) : "libraryFileContent must be define.";
         List<DockerFileEntry> res = new ArrayList<>();
 
-        try {
-            String content = FileUtils.readFileToString(libraryFile);
-            String[] lines = content.split("\n");
-            for (String line : lines) {
-                Matcher matcher = LIBRARY_CONTENT_PATTERN.matcher(line);
-                if (matcher.find() && matcher.groupCount() == 4) {
-                    ImageName imageName = imageNameBuilder.setTag(matcher.group(1)).build();
+        String[] lines = libraryFileContent.split("\n");
+        for (String line : lines) {
+            Matcher matcher = LIBRARY_CONTENT_PATTERN.matcher(line);
+            if (matcher.find() && matcher.groupCount() == 4) {
+
+                String currentTag = matcher.group(1);
+                if (StringUtils.isBlank(tag) || tag.equals(currentTag)) {
+                    ImageName imageName = imageNameBuilder.setTag(currentTag).build();
                     String gitUrl = matcher.group(2);
                     if (StringUtils.isNotBlank(defaultUser) && !gitUrl.contains("@")) {
                         gitUrl = defaultUser + "@" + gitUrl;
@@ -156,10 +185,8 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
                     res.add(entry);
                 }
             }
-        } catch (IOException e) {
-            LOGGER.error("Unable to read file " + libraryFile.getAbsolutePath(), e);
-            return res;
         }
+
         return res;
     }
 
@@ -219,29 +246,25 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
                 String path = entry.getDockerFilePath() + File.separator + "Dockerfile";
                 path = path.startsWith("./") ? path.substring(2) : path;
 
-                LOGGER.debug("Looking for file {}", path);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Looking for file {}", path);
+                }
 
-                treeWalk.setFilter(AndTreeFilter.create(PathFilter.create(path), TreeFilter.ANY_DIFF));// PathFilter.create(entry.getDockerFilePath() + File.separator +"Dockerfile"));
+                treeWalk.setFilter(AndTreeFilter.create(PathFilter.create(path), TreeFilter.ANY_DIFF));
                 if (!treeWalk.next()) {
-                    //throw new IllegalStateException("Did not find expected file 'Dockerfile'");
                     LOGGER.error("Unable to find Dockerfile for image {}", entry.getImageName().getFullyQualifiedName());
                     return null;
                 }
 
                 ObjectId objectId = treeWalk.getObjectId(0);
                 ObjectLoader loader = repository.open(objectId);
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                BufferedOutputStream out = new BufferedOutputStream(byteArrayOutputStream);
-                loader.copyTo(out);
-                out.flush();
-                res = byteArrayOutputStream.toString();
-                out.close();
+                res = new String(loader.getBytes());
 
             }
 
             revWalk.dispose();
         } catch (IOException e) {
-            LOGGER.error("An error occru while trying to retrieve Dockerfile content for image " + entry.getImageName().getFullyQualifiedName(), e);
+            LOGGER.error("An error occur while trying to retrieve Dockerfile content for image " + entry.getImageName().getFullyQualifiedName(), e);
             return null;
         }
 
@@ -249,7 +272,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
     }
 
 
-    private void pullRepository() {
+    private void pullBashbrewRepository() {
         try {
             PullResult call = git.pull().call();
             if (LOGGER.isDebugEnabled()) {
@@ -260,10 +283,9 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
                 }
             }
         } catch (GitAPIException e) {
-            LOGGER.error("Unable to pull from.", e);
+            LOGGER.error("Unable to pull from " + git.getRepository().toString(), e);
         }
     }
-
 
 
 }
