@@ -30,7 +30,7 @@
     </appender>
 
     <logger name="org.springframework" level="WARN"/>
-
+    
     <logger name="io.kodokojo.docker" level="INFO"/>
 
     <root level="WARN">

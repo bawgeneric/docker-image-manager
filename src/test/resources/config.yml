@@ -18,8 +18,8 @@ health:
     threshold: 3
 notifications:
     endpoints:
-      - name: alistener
-        url: http://10.1.5.187:8080/registry/events
+      - name: kodokojoDockerImageManager
+        url: http://dockerimagemanager:8080/registry/events
         headers:
           Authorization: [Registry]
         timeout: 500ms

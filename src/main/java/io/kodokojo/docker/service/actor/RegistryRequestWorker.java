@@ -78,10 +78,7 @@ public class RegistryRequestWorker extends AbstractActor {
 
                     }
                 })
-                .matchAny(o -> {
-                    LOGGER.warn("PushEventDispatcher Receive not machting object {}.", o.toString());
-                    unhandled(o);
-                }).build());
+                .matchAny(this::unhandled).build());
     }
 
     private static final Function<JsonObject, RegistryEvent> PUSH_EVENT_FUNCTION = event -> {

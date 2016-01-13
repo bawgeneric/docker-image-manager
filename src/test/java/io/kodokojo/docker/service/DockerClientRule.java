@@ -25,12 +25,15 @@ package io.kodokojo.docker.service;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.command.PullImageResultCallback;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.apache.commons.lang.StringUtils.isBlank;
 
 public class DockerClientRule extends ExternalResource {
 
@@ -52,6 +55,20 @@ public class DockerClientRule extends ExternalResource {
 
     public void addContainerIdToClean(String id) {
         containerToClean.add(id);
+    }
+
+    public void pullImage(String image) {
+        if (isBlank(image)) {
+            throw new IllegalArgumentException("image must be defined.");
+        }
+        if (dockerClient == null) {
+            throw new IllegalArgumentException("dockerClient must be defined.");
+        }
+        try {
+            dockerClient.pullImageCmd(image).exec(new PullImageResultCallback()).awaitCompletion().onComplete();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Unable to pull java image", e);
+        }
     }
 
     @Override

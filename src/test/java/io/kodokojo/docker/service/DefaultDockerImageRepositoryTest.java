@@ -50,4 +50,23 @@ public class DefaultDockerImageRepositoryTest {
 
     }
 
+    @Test
+    public void adding_layer_twice() {
+
+        ImageName imageName = StringToImageNameConverter.convert("library/busybox:dev");
+        Layer layer = new Layer("sha1:123456", 32);
+
+        DockerImageRepository dockerImageRepository = new DefaultDockerImageRepository();
+        boolean alreadyExist = dockerImageRepository.addLayer(imageName, layer);
+
+        assertThat(alreadyExist).isFalse();
+
+        Set<Layer> resLayer = dockerImageRepository.getlayer(new ImageName("library", "busybox", "dev"));
+        assertThat(resLayer).isNotEmpty();
+        assertThat(resLayer).extracting("digest").contains("sha1:123456");
+
+        alreadyExist = dockerImageRepository.addLayer(imageName, layer);
+        assertThat(alreadyExist).isTrue();
+    }
+
 }
