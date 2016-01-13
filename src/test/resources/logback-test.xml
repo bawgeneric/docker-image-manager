@@ -31,7 +31,8 @@
 
     <logger name="org.springframework" level="WARN"/>
 
-    <logger name="io.kodokojo.docker" level="INFO"/>
+    <logger name="io.kodokojo.docker" level="DEBUG"/>
+    <logger name="io.kodokojo.docker.service.source" level="TRACE"/>
 
     <root level="WARN">
         <appender-ref ref="STDOUT" />
