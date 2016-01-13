@@ -1,8 +1,14 @@
-package io.kodokojo.docker.service.back;
+package io.kodokojo.docker.service.connector.git;
 
-import io.kodokojo.docker.model.*;
+import io.kodokojo.docker.model.DockerFile;
+import io.kodokojo.docker.model.ImageName;
+import io.kodokojo.docker.model.ImageNameBuilder;
+import io.kodokojo.docker.model.StringToDockerFileConverter;
 import io.kodokojo.docker.service.DockerFileRepository;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.commons.io.filefilter.FalseFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jgit.api.Git;
@@ -27,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -94,46 +101,35 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
 
     @Override
     public void fetchAllDockerFile() {
-        try {
-            PullResult call = git.pull().call();
-            if (LOGGER.isDebugEnabled()) {
-                if (call.isSuccessful()) {
-                    LOGGER.debug("Successfully pull git repot {}", call.getFetchedFrom());
-                } else {
-                    LOGGER.debug("Fail to pull git repot {}", call.getFetchedFrom());
-                }
-            }
-        } catch (GitAPIException e) {
-            LOGGER.error("Unable to pull from.", e);
-        }
 
         if (!libraryDirectory.exists()) {
             throw new IllegalStateException("Library directory " + libraryDirectory.getAbsolutePath() + " seems to not exist anymore.");
         }
 
-        List<DockerFileEntry> dockerfileEntries = new ArrayList<>();
+        pullRepository();
 
-        List<File> namespaces = Arrays.asList(libraryDirectory.listFiles()).stream().filter(File::isDirectory).collect(Collectors.toList());
-        for (File namespace : namespaces) {
-            List<File> names = Arrays.asList(namespace.listFiles()).stream().filter(File::canRead).collect(Collectors.toList());
-            for (File name : names) {
+        List<DockerFileEntry> dockerFileEntries = new ArrayList<>();
+        System.out.println("RootPath : "+libraryDirectory.getPath());
+        FileUtils.listFilesAndDirs(libraryDirectory, DirectoryFileFilter.DIRECTORY, TrueFileFilter.INSTANCE).forEach(namespaceTmp -> {
+            FileUtils.listFiles(namespaceTmp, TrueFileFilter.TRUE, null).forEach(nameTmp -> {
                 ImageNameBuilder imageNameBuilder = new ImageNameBuilder();
-                imageNameBuilder.setNamespace(namespace.getName()).setName(name.getName());
-                dockerfileEntries.addAll(convertBashbrewFileToDockerfileEntries(name, imageNameBuilder));
-            }
-        }
+                imageNameBuilder.setNamespace(namespaceTmp.getName()).setName(nameTmp.getName());
+                dockerFileEntries.addAll(convertBashbrewFileToDockerfileEntries(nameTmp, imageNameBuilder));
+            });
+        });
 
-        for (DockerFileEntry entry : dockerfileEntries) {
+        for (DockerFileEntry entry : dockerFileEntries) {
             DockerFile dockerFile = fetchDockerFileFromGitRepository(entry);
             if (dockerFile != null) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Create dockerfile {}", dockerFile);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Create dockerfile {}", dockerFile);
                 }
                 dockerFileRepository.addDockerFile(dockerFile);
             }
         }
 
     }
+
 
     @Override
     public void fetchDockerFile(ImageName imageName) {
@@ -252,48 +248,22 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
         return res;
     }
 
-    private class DockerFileEntry {
 
-        private final ImageName imageName;
-
-        private final String gitUrl;
-
-        private final String gitRef;
-
-        private final String dockerFilePath;
-
-        public DockerFileEntry(ImageName imageName, String gitUrl, String gitRef, String dockerFilePath) {
-            this.imageName = imageName;
-            this.gitUrl = gitUrl;
-            this.gitRef = gitRef;
-            this.dockerFilePath = dockerFilePath;
-        }
-
-        public ImageName getImageName() {
-            return imageName;
-        }
-
-        public String getGitUrl() {
-            return gitUrl;
-        }
-
-        public String getGitRef() {
-            return gitRef;
-        }
-
-        public String getDockerFilePath() {
-            return dockerFilePath;
-        }
-
-        @Override
-        public String toString() {
-            return "DockerFileEntry{" +
-                    "imageName='" + imageName + '\'' +
-                    ", gitUrl='" + gitUrl + '\'' +
-                    ", gitRef='" + gitRef + '\'' +
-                    ", dockerFilePath='" + dockerFilePath + '\'' +
-                    '}';
+    private void pullRepository() {
+        try {
+            PullResult call = git.pull().call();
+            if (LOGGER.isDebugEnabled()) {
+                if (call.isSuccessful()) {
+                    LOGGER.debug("Successfully pull git repot {}", call.getFetchedFrom());
+                } else {
+                    LOGGER.debug("Fail to pull git repot {}", call.getFetchedFrom());
+                }
+            }
+        } catch (GitAPIException e) {
+            LOGGER.error("Unable to pull from.", e);
         }
     }
+
+
 
 }

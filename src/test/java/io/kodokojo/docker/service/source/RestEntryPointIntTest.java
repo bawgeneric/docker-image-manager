@@ -66,8 +66,9 @@ public class RestEntryPointIntTest {
 
         Ports.Binding[] bindingsExposed = bindings.get(ExposedPort.tcp(5000));
         Integer hostPort = bindingsExposed[0].getHostPort();
-
         LOGGER.info("Registry started on port {}", hostPort);
+
+        //  Change this by Docker container
         RestEntryPoint restEntryPoint = injector.getInstance(RestEntryPoint.class);
         restEntryPoint.start();
 

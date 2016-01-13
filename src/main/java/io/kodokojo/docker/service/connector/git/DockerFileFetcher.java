@@ -1,6 +1,5 @@
-package io.kodokojo.docker.service.back;
+package io.kodokojo.docker.service.connector.git;
 
-import io.kodokojo.docker.model.DockerFile;
 import io.kodokojo.docker.model.ImageName;
 
 public interface DockerFileFetcher {

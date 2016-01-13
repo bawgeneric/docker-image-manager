@@ -1,9 +1,8 @@
-package io.kodokojo.docker.service.back;
+package io.kodokojo.docker.service.connector.git;
 
 import io.kodokojo.docker.model.DockerFile;
 import io.kodokojo.docker.model.StringToImageNameConverter;
 import io.kodokojo.docker.service.DefaultDockerFileRepository;
-import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
