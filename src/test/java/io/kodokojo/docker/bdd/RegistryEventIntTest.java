@@ -22,6 +22,7 @@ package io.kodokojo.docker.bdd;
  * #L%
  */
 
+import com.tngtech.jgiven.annotation.As;
 import com.tngtech.jgiven.junit.ScenarioTest;
 import io.kodokojo.docker.DockerIsRequire;
 import io.kodokojo.docker.DockerPresentMethodRule;
@@ -31,6 +32,7 @@ import io.kodokojo.docker.bdd.docker.DockerRegistryThen;
 import org.junit.Rule;
 import org.junit.Test;
 
+@As("RegistryEvent integration tests")
 public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, DockerCommonsWhen, DockerRegistryThen<?>> {
 
     @Rule

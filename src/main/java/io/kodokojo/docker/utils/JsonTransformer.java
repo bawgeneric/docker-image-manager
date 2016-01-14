@@ -1,4 +1,4 @@
-package io.kodokojo.docker;
+package io.kodokojo.docker.utils;
 
 /*
  * #%L
@@ -22,10 +22,16 @@ package io.kodokojo.docker;
  * #L%
  */
 
-import java.lang.annotation.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import spark.ResponseTransformer;
 
-@Target({ElementType.METHOD})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface DockerIsRequire {
-    /* Tagging interface */
+public class JsonTransformer implements ResponseTransformer {
+
+    private Gson gson = new GsonBuilder().create();
+
+    @Override
+    public String render(Object model) throws Exception {
+        return gson.toJson(model);
+    }
 }

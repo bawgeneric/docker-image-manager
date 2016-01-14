@@ -38,16 +38,33 @@ import io.kodokojo.docker.service.actor.PushEventDispatcher;
 import io.kodokojo.docker.service.actor.RegistryRequestWorker;
 import io.kodokojo.docker.service.back.DefaultDockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
+import io.kodokojo.docker.service.connector.git.DockerFileFetcher;
+import io.kodokojo.docker.service.connector.git.GitBashbrewDockerFileFetcher;
 
 import javax.inject.Named;
+import java.io.File;
 
 public class StandardModule extends AbstractModule {
+
+
+    //private final String gitUrl = "git@github.com:kodokojo/acme.git";
+    private final String gitUrl = "https://github.com/kodokojo/acme.git";
+
+    private final String libraryPath = "bashbrew/library";
 
     @Override
     protected void configure() {
 
         bind(ActorSystem.class).toInstance(ActorSystem.apply("docker-image-manager"));
 
+    }
+
+    @Provides
+    @Singleton
+    DockerFileFetcher provideDockerFileFetcher(DockerFileRepository dockerFileRepository) {
+        File baseDire = new File("");
+        String workspace = baseDire.getAbsolutePath() + File.separator + "workspace";
+        return new GitBashbrewDockerFileFetcher(workspace, null, gitUrl, libraryPath, dockerFileRepository);
     }
 
     @Provides
@@ -72,7 +89,7 @@ public class StandardModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("dependencyDockerfileUpdateDispatcher")
-    ActorRef provideDependencyDockerfileUpdateDispatcher(ActorSystem system,DockerFileBuildOrchestrator orchestrator) {
+    ActorRef provideDependencyDockerfileUpdateDispatcher(ActorSystem system, DockerFileBuildOrchestrator orchestrator) {
         return system.actorOf(Props.create(DependencyDockerfileUpdateDispatcher.class, orchestrator));
     }
 

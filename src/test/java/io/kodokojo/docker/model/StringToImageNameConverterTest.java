@@ -60,7 +60,7 @@ public class StringToImageNameConverterTest {
         assertThat(res.getNamespace()).isEqualTo("grafana");
         assertThat(res.getName()).isNotEmpty();
         assertThat(res.getName()).isEqualTo("grafana");
-        assertThat(res.getTag()).isNullOrEmpty();
+        assertThat(res.getTag()).isEqualTo("latest");
 
     }
 
@@ -74,7 +74,7 @@ public class StringToImageNameConverterTest {
         assertThat(res.getNamespace()).isEqualTo("library");
         assertThat(res.getName()).isNotEmpty();
         assertThat(res.getName()).isEqualTo("grafana");
-        assertThat(res.getTag()).isNullOrEmpty();
+        assertThat(res.getTag()).isEqualTo("latest");
     }
     @Test
     public void valide_with_name_and_tag() {

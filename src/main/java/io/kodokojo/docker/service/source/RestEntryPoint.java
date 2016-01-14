@@ -23,26 +23,22 @@ package io.kodokojo.docker.service.source;
  */
 
 import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
-import io.kodokojo.docker.model.HttpVerbe;
-import io.kodokojo.docker.model.RestRequest;
-import io.kodokojo.docker.model.StringToDockerFileConverter;
-import io.kodokojo.docker.service.DefaultDockerImageRepository;
-import io.kodokojo.docker.service.DockerImageRepository;
-import io.kodokojo.docker.service.actor.PushEventDispatcher;
+import io.kodokojo.docker.model.*;
+import io.kodokojo.docker.service.DockerFileRepository;
+import io.kodokojo.docker.utils.JsonTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import spark.ResponseTransformer;
 import spark.Spark;
 
 import javax.inject.Named;
 import java.util.HashMap;
 import java.util.Set;
 
-import static spark.Spark.get;
-import static spark.Spark.halt;
-import static spark.Spark.post;
+import static spark.Spark.*;
 
 public class RestEntryPoint {
 
@@ -50,20 +46,39 @@ public class RestEntryPoint {
 
     private static final String JSON_CONTENT_TYPE = "application/json";
 
+    private final ThreadLocal<Gson> localGson = new ThreadLocal<Gson>() {
+        @Override
+        protected Gson initialValue() {
+            return new GsonBuilder().create();
+        }
+    };
+
+    private final ResponseTransformer jsonResponseTransformer;
+
     private final ActorRef pushEventDispatcher;
 
+    private final DockerFileRepository dockerFileRepository;
+
     @Inject
-    public RestEntryPoint(@Named("pushEventDispatcher") ActorRef pushEventDispatcher) {
+    public RestEntryPoint(@Named("pushEventDispatcher") ActorRef pushEventDispatcher, DockerFileRepository dockerFileRepository) {
         if (pushEventDispatcher == null) {
             throw new IllegalArgumentException("pushEventDispatcher must be defined.");
         }
         this.pushEventDispatcher = pushEventDispatcher;
+        if (dockerFileRepository == null) {
+            throw new IllegalArgumentException("dockerFileRepository must be defined.");
+        }
+        this.dockerFileRepository = dockerFileRepository;
+        jsonResponseTransformer = new JsonTransformer();
     }
 
     public void start() {
         LOGGER.info("Starting Docker image manager RestEntryPoint");
 
         Spark.port(8080);
+
+
+        before("/api/*", ((req, res) -> res.type(JSON_CONTENT_TYPE)));
 
         get("/api", JSON_CONTENT_TYPE, (request, response) -> {
             response.type(JSON_CONTENT_TYPE);
@@ -74,7 +89,6 @@ public class RestEntryPoint {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("Receive a push notification, sending to pushEventDispatcher. : {}", request.body());
             }
-//            LOGGER.debug("Receive a push notification, sending to pushEventDispatcher. : {}", request.body());
 
             HashMap<String, String> header = new HashMap<>();
             Set<String> headerKeys = request.headers();
@@ -89,7 +103,26 @@ public class RestEntryPoint {
             return null;
         });
 
-        //get("/repository/");
+        get("/api/repository/:namespace/:name/:tag", JSON_CONTENT_TYPE, (request, response) -> {
+
+            String namespace = request.params(":namespace");
+            String name = request.params(":name");
+            String tag = request.params(":tag");
+
+            ImageNameBuilder builder = new ImageNameBuilder();
+            builder.setNamespace(namespace);
+            builder.setName(name);
+            builder.setTag(tag);
+            ImageName imageName = builder.build();
+            DockerFile dockerFile = dockerFileRepository.getDockerFileFromImageName(imageName);
+            if (dockerFile == null) {
+                halt(404);
+            }
+            Set<DockerFile> children = dockerFileRepository.getDockerFileChildOf(dockerFile);
+
+            return new DockerFileNode(dockerFile, children);
+
+        }, jsonResponseTransformer);
 
         LOGGER.info("Docker image manager RestEntryPoint started");
     }

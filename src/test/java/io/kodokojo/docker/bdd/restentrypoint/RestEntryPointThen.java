@@ -1,4 +1,4 @@
-package io.kodokojo.docker;
+package io.kodokojo.docker.bdd.restentrypoint;
 
 /*
  * #%L
@@ -22,23 +22,29 @@ package io.kodokojo.docker;
  * #L%
  */
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import io.kodokojo.docker.config.StandardModule;
-import io.kodokojo.docker.service.DockerFileRepository;
-import io.kodokojo.docker.service.connector.git.DockerFileFetcher;
-import io.kodokojo.docker.service.source.RestEntryPoint;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.tngtech.jgiven.Stage;
+import retrofit.RestAdapter;
+import retrofit.converter.GsonConverter;
+import retrofit.http.GET;
 
-public class Launcher {
+public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Stage<SELF> {
 
-    public static void main(String[] args) {
-        Injector injector = Guice.createInjector(new StandardModule());
 
-        DockerFileFetcher dockerFileFetcher = injector.getInstance(DockerFileFetcher.class);
-        dockerFileFetcher.fetchAllDockerFile();
 
-        RestEntryPoint entryPoint = injector.getInstance(RestEntryPoint.class);
-        entryPoint.start();
+    protected ClientRestEntryPoint provideClientRestEntryPoint(String baseUrl) {
+        Gson gson = new GsonBuilder().create();
+        RestAdapter restAdapter = new RestAdapter.Builder().setEndpoint(baseUrl).setConverter(new GsonConverter(gson)).build();
+        return restAdapter.create(ClientRestEntryPoint.class);
+    }
+
+    private interface ClientRestEntryPoint {
+
+        @GET("/api")
+        String apiVersion();
+
     }
 
 }
+

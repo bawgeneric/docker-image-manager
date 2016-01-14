@@ -74,8 +74,8 @@ public class DockerCommonsThen<SELF extends DockerCommonsThen<SELF>> extends Sta
             currentStep.addAttachment(logAttachment);
         } catch (InterruptedException e) {
             LOGGER.error("Unable to retrieve log", e);
-            e.printStackTrace();
         }
+
         return self();
     }
 
@@ -85,8 +85,7 @@ public class DockerCommonsThen<SELF extends DockerCommonsThen<SELF>> extends Sta
 
         @Override
         public void onNext(Frame frame) {
-            System.out.println(new String(frame.getPayload()));
-            sb.append(frame.toString()).append("\n");
+            sb.append(new String(frame.getPayload()));
         }
 
         public String getLog() {

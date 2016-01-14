@@ -50,7 +50,6 @@ public class RestEntryPointIntTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestEntryPointIntTest.class);
 
-    @Rule
     public DockerClientSupport dockerClientSupport = new DockerClientSupport();
 
     private Injector injector;

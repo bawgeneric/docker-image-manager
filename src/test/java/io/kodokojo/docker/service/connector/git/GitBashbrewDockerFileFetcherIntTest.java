@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class GitBashbrewDockerFileFetcherIntTest {
 
-    private String gitUrl = "git@github.com:kodokojo/acme.git";
+    private String gitUrl = "git://github.com/kodokojo/acme";
 
     @Rule
     public TemporaryFolder tmpFolder = new TemporaryFolder();
@@ -46,7 +46,7 @@ public class GitBashbrewDockerFileFetcherIntTest {
         String libraryPath = "bashbrew/library";
         File workspace = tmpFolder.newFolder();
         DefaultDockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
-        DockerFileFetcher dockerFileFetcher = new GitBashbrewDockerFileFetcher(workspace.getAbsolutePath(), "git", gitUrl, libraryPath, dockerFileRepository);
+        DockerFileFetcher dockerFileFetcher = new GitBashbrewDockerFileFetcher(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
 
         dockerFileFetcher.fetchDockerFile(StringToImageNameConverter.convert("kodokojo/busybox"));
 
@@ -60,13 +60,13 @@ public class GitBashbrewDockerFileFetcherIntTest {
         String libraryPath = "bashbrew/library";
         File workspace = tmpFolder.newFolder();
         DefaultDockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
-        DockerFileFetcher dockerFileFetcher = new GitBashbrewDockerFileFetcher(workspace.getAbsolutePath(), "git", gitUrl, libraryPath, dockerFileRepository);
+        DockerFileFetcher dockerFileFetcher = new GitBashbrewDockerFileFetcher(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
 
         dockerFileFetcher.fetchDockerFile(StringToImageNameConverter.convert("kodokojo/busybox:1.0.0"));
 
         DockerFile dockerFile = dockerFileRepository.getDockerFileFromImageName(StringToImageNameConverter.convert("kodokojo/busybox:1.0.0"));
         assertThat(dockerFile).isNotNull();
-        assertThat(dockerFile.getFrom().getFullyQualifiedName()).isEqualTo("library/centos");
+        assertThat(dockerFile.getFrom().getFullyQualifiedName()).isEqualTo("library/centos:latest");
 
     }
 
@@ -76,7 +76,7 @@ public class GitBashbrewDockerFileFetcherIntTest {
 
         File workspace = tmpFolder.newFolder();
         DefaultDockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
-        DockerFileFetcher dockerFileFetcher = new GitBashbrewDockerFileFetcher(workspace.getAbsolutePath(), "git", gitUrl, libraryPath, dockerFileRepository);
+        DockerFileFetcher dockerFileFetcher = new GitBashbrewDockerFileFetcher(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
 
         dockerFileFetcher.fetchAllDockerFile();
 

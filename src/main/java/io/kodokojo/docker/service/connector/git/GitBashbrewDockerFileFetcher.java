@@ -30,7 +30,6 @@ import io.kodokojo.docker.service.DockerFileRepository;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
@@ -49,12 +48,10 @@ import org.eclipse.jgit.treewalk.filter.TreeFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -104,16 +101,31 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
             throw new IllegalArgumentException("bashbrewGitUrl must be defined.");
         }
 
-        File bashbrewGitDir = new File(workspace.getAbsolutePath() + File.separator + BASHBREW_GIT_DIRECTORY);
-        bashbrewGitDir.mkdirs();
-
         dockerfileGitDir = new File(workspace.getAbsolutePath() + File.separator + DOCKERFILE_GIT_DIRECTORY);
         dockerfileGitDir.mkdirs();
 
-        try {
-            git = Git.cloneRepository().setURI(bashbrewGitUrl).setDirectory(bashbrewGitDir).call();
-        } catch (GitAPIException e) {
-            throw new IllegalStateException("An unexpected error occur while trying to clone Git repository " + bashbrewGitUrl, e);
+        File bashbrewGitDir = new File(workspace.getAbsolutePath() + File.separator + BASHBREW_GIT_DIRECTORY);
+        String gitPath = bashbrewGitDir.getAbsolutePath() + File.separator + GIT_DIRECTORY;
+        File bashbrewGitWorkerDir = new File(gitPath);
+
+        if (bashbrewGitWorkerDir.exists()) {
+            try {
+                Repository repository = new FileRepository(bashbrewGitWorkerDir);
+                git = Git.wrap(repository);
+                System.out.println("Plug repository " + bashbrewGitDir);
+            } catch (IOException e) {
+                throw new IllegalStateException("An unexpected error occur while trying to plug Git repository " + bashbrewGitUrl, e);
+            }
+
+        } else {
+            bashbrewGitDir.mkdirs();
+
+            try {
+                git = Git.cloneRepository().setURI(bashbrewGitUrl).setDirectory(bashbrewGitDir).call();
+                System.out.println("Clone repository " + bashbrewGitUrl);
+            } catch (GitAPIException e) {
+                throw new IllegalStateException("An unexpected error occur while trying to clone Git repository " + bashbrewGitUrl, e);
+            }
         }
         libraryDirectory = new File(bashbrewGitDir + File.separator + bashbrewGitLibraryPath);
     }

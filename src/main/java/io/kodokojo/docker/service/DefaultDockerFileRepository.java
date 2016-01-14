@@ -125,8 +125,10 @@ public class DefaultDockerFileRepository implements DockerFileRepository {
                         LOGGER.debug("Unable to find dockerfile parent {}, create a default one.", from.getFullyQualifiedName());
                     }
                     children = new HashSet<>();
+                    children.add(dockerFile);
                     DockerFile defaultParent = new DockerFile(from);
                     dockerFiles.put(from, defaultParent);
+                    dependencies.put(from,children);
                 } else if (!children.contains(dockerFile)) {
                     children.add(dockerFile);
                 }

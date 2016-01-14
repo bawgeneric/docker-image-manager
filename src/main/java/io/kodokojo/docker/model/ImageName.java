@@ -55,8 +55,12 @@ public class ImageName {
             throw new IllegalArgumentException("name  must be defined.");
         }
         this.name = name;
-        this.tag = tag;
-        this.tags = Collections.singletonList(tag);
+        if (StringUtils.isBlank(tag)) {
+            this.tag = "latest";
+        } else {
+            this.tag = tag;
+        }
+        this.tags = Collections.singletonList(this.tag);
     }
 
     public ImageName(String namespace, String name, String tag) {
@@ -165,7 +169,7 @@ public class ImageName {
         if (repository != null ? !repository.equals(imageName.repository) : imageName.repository != null) return false;
         if (!namespace.equals(imageName.namespace)) return false;
         if (!name.equals(imageName.name)) return false;
-        return tag != null ? tag.equals(imageName.tag) : imageName.tag == null;
+        return tag != null ? tag.equals(imageName.tag) : imageName.tag == null ;
 
     }
 
