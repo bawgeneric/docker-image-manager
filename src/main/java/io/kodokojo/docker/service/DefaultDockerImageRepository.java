@@ -24,6 +24,8 @@ package io.kodokojo.docker.service;
 
 import io.kodokojo.docker.model.ImageName;
 import io.kodokojo.docker.model.Layer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -31,7 +33,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class DefaultDockerImageRepository implements DockerImageRepository{
+public class DefaultDockerImageRepository implements DockerImageRepository {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultDockerImageRepository.class);
 
     private Map<ImageName, Set<Layer>> repository;
 
@@ -52,6 +56,9 @@ public class DefaultDockerImageRepository implements DockerImageRepository{
         HashSet<Layer> value = new HashSet<>();
         value.add(layer);
         Set<Layer> previous = repository.put(imageName, value);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Add layer to image {} with size {} and digest {}.", imageName.getFullyQualifiedName(), layer.getSize(), layer.getDigest());
+        }
         if (previous != null && previous.contains(layer)) {
             res = true;
             value.addAll(previous);

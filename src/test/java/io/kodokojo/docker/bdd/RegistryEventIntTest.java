@@ -22,20 +22,31 @@ package io.kodokojo.docker.bdd;
  * #L%
  */
 
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.jgiven.annotation.Hidden;
+import com.tngtech.jgiven.annotation.Quoted;
 import com.tngtech.jgiven.junit.ScenarioTest;
 import io.kodokojo.docker.bdd.docker.DockerCommonsGiven;
 import io.kodokojo.docker.bdd.docker.DockerCommonsThen;
 import io.kodokojo.docker.bdd.docker.DockerCommonsWhen;
+import io.kodokojo.docker.bdd.docker.DockerRegistryThen;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
-public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, DockerCommonsWhen, DockerCommonsThen> {
+public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, DockerCommonsWhen, DockerRegistryThen<?>> {
 
     @Test
-    public void running_project() {
-        given().$_is_pull("busybox:latest")
+    public void push_busybox_to_registry() {
+        String image = "busybox:latest";
+        String name = "busybox";
+
+        given().$_is_pull(image)
         .and().kodokojo_docker_image_manager_is_started()
         .and().registry_is_started();
-        when().push_image_$_to_registry("busybox");
+        when().push_image_$_to_registry(name);
+        then().docker_image_manager_receive_image_$(name)
+        .and().attach_docker_image_manager_logs();
     }
 
 }

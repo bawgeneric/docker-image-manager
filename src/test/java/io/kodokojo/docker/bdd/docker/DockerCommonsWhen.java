@@ -39,21 +39,20 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DockerCommonsWhen extends Stage<DockerCommonsWhen> {
 
     @ExpectedScenarioState
     DockerClient dockerClient;
 
-    @ExpectedScenarioState(resolution = ScenarioState.Resolution.NAME)
-    List<String> containersToRemove = new ArrayList<>();
-
-    @ExpectedScenarioState
-    String kodokojoDockerImageContainerName;
-
     @ExpectedScenarioState
     int registryPort;
+
+    @ExpectedScenarioState
+    Map<String, String> containers = new HashMap<>();
 
     public DockerCommonsWhen push_image_$_to_registry(@Quoted String imageName) {
         if (registryPort <= 0) {
@@ -64,4 +63,6 @@ public class DockerCommonsWhen extends Stage<DockerCommonsWhen> {
         dockerClient.pushImageCmd(imageNameToRegistry).exec(new PushImageResultCallback()).awaitSuccess();
         return self();
     }
+
+
 }

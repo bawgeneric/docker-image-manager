@@ -26,9 +26,6 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.*;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.*;
 import io.kodokojo.docker.service.DockerClientRule;
@@ -39,10 +36,13 @@ import org.junit.Rule;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
+
+    public static final String DOCKER_IMAGE_MANAGER_KEY = "docker-image-manager";
 
     @Rule
     @ProvidedScenarioState
@@ -52,14 +52,25 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
     DockerClient dockerClient;
 
     @ProvidedScenarioState
-    String kodokojoDockerImageContainerName;
+    String containerName;
+
+    @ProvidedScenarioState
+    String containerId;
 
     @ProvidedScenarioState
     int registryPort;
 
+    @ProvidedScenarioState
+    Map<String, String> containers = new HashMap<>();
+
     @BeforeScenario
     public void create_a_docker_client() {
         dockerClient = dockerClientRule.getDockerClient();
+    }
+
+    @AfterScenario
+    public void tear_down() {
+        dockerClientRule.stopAndRemoveContainer();
     }
 
     public DockerCommonsGiven $_is_pull(@Quoted String imageName) {
@@ -74,45 +85,70 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
         File targetFile = new File(baseDire.getAbsolutePath() + File.separator + "target");
         File projectJarFile = FileUtils.listFiles(targetFile, new RegexFileFilter("docker-image-manager-([\\.\\d]*)(-SNAPSHOT)?.jar"), FalseFileFilter.FALSE).stream().findFirst().get();
 
-        CreateContainerResponse containerId = dockerClient.createContainerCmd("java:8-jre")
-                .withExposedPorts(ExposedPort.tcp(8080))
+        Ports portBinding = new Ports();
+        ExposedPort exposedPort = ExposedPort.tcp(8080);
+        portBinding.bind(exposedPort, Ports.Binding(null));
+
+        CreateContainerResponse containerResponseId = dockerClient.createContainerCmd("java:8-jre")
                 .withBinds(new Bind(baseDire.getAbsolutePath(), new Volume("/project")))
+                .withPortBindings(portBinding)
+                .withExposedPorts(exposedPort)
                 .withWorkingDir("/project")
                 .withCmd("java", "-jar", "/project/target/" + projectJarFile.getName())
                 .exec();
-        InspectContainerResponse inspectContainerResponse = dockerClient.inspectContainerCmd(containerId.getId()).exec();
-        kodokojoDockerImageContainerName = inspectContainerResponse.getName();
-        dockerClient.startContainerCmd(containerId.getId()).exec();
-        dockerClientRule.addContainerIdToClean(containerId.getId());
+        this.containerId = containerResponseId.getId();
+        containers.put(DOCKER_IMAGE_MANAGER_KEY, containerId);
+        this.containerName = dockerClientRule.getContainerName(this.containerId);
+        dockerClient.startContainerCmd(containerResponseId.getId()).exec();
+        dockerClientRule.addContainerIdToClean(containerResponseId.getId());
+
+        int portService = dockerClientRule.getExposedPort(containerId, 8080);
+        String url = "http://" + dockerClientRule.getServerIp() + ":" + portService + "/api";
+
+        dockerClientRule.waitUntilHttpRequestRespond(url, 5000);
         return self();
     }
+
 
     public DockerCommonsGiven $_image_is_started(String imageName, @Hidden int ... ports) {
 
         List<PortBinding> portBindings = new ArrayList<>();
+        List<ExposedPort> exposedPorts = new ArrayList<>();
         for(int port : ports) {
-            PortBinding binding = new PortBinding(Ports.Binding(null),ExposedPort.tcp(port));
+            ExposedPort exposedPort = ExposedPort.tcp(port);
+            exposedPorts.add(exposedPort);
+            PortBinding binding = new PortBinding(Ports.Binding(null), exposedPort);
             portBindings.add(binding);
         }
-        CreateContainerResponse containerId = dockerClient.createContainerCmd(imageName)
+        CreateContainerResponse containerResponseId = dockerClient.createContainerCmd(imageName)
                 .withPortBindings(portBindings.toArray(new PortBinding[0]))
+                .withExposedPorts(exposedPorts.toArray(new ExposedPort[0]))
                 .exec();
-        dockerClientRule.addContainerIdToClean(containerId.getId());
-        dockerClient.startContainerCmd(containerId.getId()).exec();
+        /*
+        this.containerId = containerResponseId.getId();
+        this.containerName = dockerClientRule.getContainerName(this.containerId);
+        */
+        dockerClientRule.addContainerIdToClean(containerResponseId.getId());
+        dockerClient.startContainerCmd(containerResponseId.getId()).exec();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return self();
     }
 
     public DockerCommonsGiven registry_is_started() {
         File f = new File("src/test/resources/config.yml");
         String configPath = f.getAbsolutePath();
+
         Ports portBinding = new Ports();
         portBinding.bind(ExposedPort.tcp(5000), Ports.Binding(null));
-
 
         CreateContainerResponse registryCmd = dockerClient.createContainerCmd("registry:2")
                 .withBinds(new Bind(configPath, new Volume("/etc/docker/registry/config.yml")))
                 .withPortBindings(portBinding)
-                .withLinks(new Link(kodokojoDockerImageContainerName, "dockerimagemanager"))
+                .withLinks(new Link(containerId, "dockerimagemanager"))
                 .exec();
         dockerClientRule.addContainerIdToClean(registryCmd.getId());
         dockerClient.startContainerCmd(registryCmd.getId()).exec();
@@ -121,7 +157,10 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
 
         Ports.Binding[] bindingsExposed = bindings.get(ExposedPort.tcp(5000));
         registryPort = bindingsExposed[0].getHostPort();
-        System.out.println("Registry port " + registryPort);
+
+        String url = "http://" + dockerClientRule.getServerIp() + ":" + registryPort +"/v2/";
+        dockerClientRule.waitUntilHttpRequestRespond(url, 2500);
+
         return self();
     }
 

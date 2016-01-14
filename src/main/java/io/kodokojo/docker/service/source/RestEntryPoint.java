@@ -40,6 +40,7 @@ import javax.inject.Named;
 import java.util.HashMap;
 import java.util.Set;
 
+import static spark.Spark.get;
 import static spark.Spark.halt;
 import static spark.Spark.post;
 
@@ -60,10 +61,14 @@ public class RestEntryPoint {
     }
 
     public void start() {
-        LOGGER.info("Starting registry listener");
-
+        LOGGER.info("Starting Docker image manager RestEntryPoint");
 
         Spark.port(8080);
+
+        get("/api", JSON_CONTENT_TYPE, (request, response) -> {
+            response.type(JSON_CONTENT_TYPE);
+            return "{\"version\":\"1.0.0\"}";
+        });
 
         post("/registry/events", JSON_CONTENT_TYPE, (request, response) -> {
             if (LOGGER.isTraceEnabled()) {
@@ -83,6 +88,7 @@ public class RestEntryPoint {
             halt(200);
             return null;
         });
+        LOGGER.info("Docker image manager RestEntryPoint started");
     }
 
     public void stop() {
