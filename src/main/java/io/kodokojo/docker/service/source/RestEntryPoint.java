@@ -88,6 +88,9 @@ public class RestEntryPoint {
             halt(200);
             return null;
         });
+
+        //get("/repository/");
+
         LOGGER.info("Docker image manager RestEntryPoint started");
     }
 

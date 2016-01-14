@@ -32,10 +32,9 @@ import com.github.dockerjava.api.model.Volume;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.google.inject.Guice;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
 import io.kodokojo.docker.config.StandardModule;
-import io.kodokojo.docker.service.DockerClientRule;
+import io.kodokojo.docker.service.DockerClientSupport;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -52,7 +51,7 @@ public class RestEntryPointIntTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(RestEntryPointIntTest.class);
 
     @Rule
-    public DockerClientRule dockerClientRule = new DockerClientRule();
+    public DockerClientSupport dockerClientSupport = new DockerClientSupport();
 
     private Injector injector;
 
@@ -69,7 +68,7 @@ public class RestEntryPointIntTest {
     @Test
     public void receive_event_from_registry() {
 
-        DockerClient dockerClient = dockerClientRule.getDockerClient();
+        DockerClient dockerClient = dockerClientSupport.getDockerClient();
 
         File f = new File("src/test/resources/config.yml");
         String configPath = f.getAbsolutePath();
@@ -81,7 +80,7 @@ public class RestEntryPointIntTest {
                 .withBinds(new Bind(configPath, new Volume("/etc/docker/registry/config.yml")))
                 .withPortBindings(portBinding)
                 .exec();
-        dockerClientRule.addContainerIdToClean(registryCmd.getId());
+        dockerClientSupport.addContainerIdToClean(registryCmd.getId());
         dockerClient.startContainerCmd(registryCmd.getId()).exec();
         InspectContainerResponse inspectContainerResponse = dockerClient.inspectContainerCmd(registryCmd.getId()).exec();
         Map<ExposedPort, Ports.Binding[]> bindings = inspectContainerResponse.getNetworkSettings().getPorts().getBindings();
@@ -109,7 +108,7 @@ public class RestEntryPointIntTest {
 
     private void pull(String imageName) {
         try {
-            dockerClientRule.getDockerClient().pullImageCmd(imageName).exec(new PullImageResultCallback()).awaitCompletion().onComplete();
+            dockerClientSupport.getDockerClient().pullImageCmd(imageName).exec(new PullImageResultCallback()).awaitCompletion().onComplete();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

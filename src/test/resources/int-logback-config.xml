@@ -21,6 +21,10 @@
   -->
 <configuration debug="false">
 
+    <!--
+     This logback configuration file is used when integration tests are done by Docker
+     -->
+
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <!-- encoders are assigned the type
              ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
@@ -29,9 +33,10 @@
         </encoder>
     </appender>
 
-    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.springframework" level="INFO"/>
 
-    <logger name="io.kodokojo.docker" level="INFO"/>
+    <logger name="io.kodokojo.docker" level="TRACE"/>
+
 
     <root level="WARN">
         <appender-ref ref="STDOUT" />

@@ -36,6 +36,9 @@ import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.NameFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.junit.rules.TestRule;
+import org.junit.runner.*;
+import org.junit.runners.model.Statement;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -51,9 +54,6 @@ public class DockerCommonsWhen extends Stage<DockerCommonsWhen> {
     @ExpectedScenarioState
     int registryPort;
 
-    @ExpectedScenarioState
-    Map<String, String> containers = new HashMap<>();
-
     public DockerCommonsWhen push_image_$_to_registry(@Quoted String imageName) {
         if (registryPort <= 0) {
             throw new IllegalStateException("Registry port not available");
@@ -63,6 +63,7 @@ public class DockerCommonsWhen extends Stage<DockerCommonsWhen> {
         dockerClient.pushImageCmd(imageNameToRegistry).exec(new PushImageResultCallback()).awaitSuccess();
         return self();
     }
+
 
 
 }

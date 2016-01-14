@@ -27,22 +27,22 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
-import io.kodokojo.docker.service.DockerClientRule;
+import io.kodokojo.docker.service.DockerClientSupport;
 
 import java.io.IOException;
 
 public class DockerRegistryThen<SELF extends DockerRegistryThen<SELF>> extends DockerCommonsThen<SELF> {
 
     @ExpectedScenarioState
-    DockerClientRule dockerClientRule;
+    DockerClientSupport dockerClientSupport;
 
     public SELF docker_image_manager_receive_image_$(String imageName) {
         String containerId = containers.get(DockerCommonsGiven.DOCKER_IMAGE_MANAGER_KEY);
 
-        int dockerClientRuleExposedPort = dockerClientRule.getExposedPort(containerId, 8080);
+        int dockerClientRuleExposedPort = dockerClientSupport.getExposedPort(containerId, 8080);
         OkHttpClient httpClient = new OkHttpClient();
 
-        String url = "http://" + dockerClientRule.getServerIp() + ":" + dockerClientRuleExposedPort + "/api";
+        String url = "http://" + dockerClientSupport.getServerIp() + ":" + dockerClientRuleExposedPort + "/api";
         HttpUrl httpUrl = HttpUrl.parse(url);
 
         Request request = new Request.Builder().url(httpUrl).get().build();

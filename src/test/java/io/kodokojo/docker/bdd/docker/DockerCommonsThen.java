@@ -67,16 +67,9 @@ public class DockerCommonsThen<SELF extends DockerCommonsThen<SELF>> extends Sta
     }
 
     public SELF attach_log(String containerId) {
-       /*
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        */
+       
         try {
             LogBuilder logBuilder = dockerClient.logContainerCmd(containerId).withStdOut().withStdErr().withTailAll().exec(new LogBuilder()).awaitCompletion();
-            System.out.println(logBuilder.getLog());
             Attachment logAttachment = Attachment.plainText(logBuilder.getLog()).withFileName("log.txt").withTitle("Log of container " + containerName);
             currentStep.addAttachment(logAttachment);
         } catch (InterruptedException e) {

@@ -23,15 +23,20 @@ package io.kodokojo.docker.service;
  */
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Ports;
+import com.github.dockerjava.api.model.Version;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.squareup.okhttp.*;
+import org.apache.commons.lang.StringUtils;
+import org.junit.Assume;
 import org.junit.rules.ExternalResource;
+import org.junit.rules.MethodRule;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,9 +48,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
-public class DockerClientRule extends ExternalResource {
+public class DockerClientSupport {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DockerClientRule.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DockerClientSupport.class);
 
     private DockerClient dockerClient;
 
@@ -53,19 +58,27 @@ public class DockerClientRule extends ExternalResource {
 
     private String remoteDaemonDockerIp;
 
-    public DockerClientRule(DockerClientConfig config) {
+    private final boolean dockerIsPresent;
+
+    public DockerClientSupport(DockerClientConfig config) {
         dockerClient = DockerClientBuilder.getInstance(config).build();
         if (isNotWorking(dockerClient)) {
             String userHome = System.getProperty("user.home");
             config = DockerClientConfig.createDefaultConfigBuilder().withUri("https://192.168.99.100:2376").withDockerCertPath(userHome + "/.docker/machine/machines/default").build();
             dockerClient = DockerClientBuilder.getInstance(config).build();
+            LOGGER.warn("Unable to connect to Docker daemon with default configuration, try to connect to a local Docker machine instance launch under name 'default' available on socket 'https://192.168.99.100:2376'");
         }
         remoteDaemonDockerIp = config.getUri() != null ? config.getUri().getHost() : "127.0.0.1";
         containerToClean = new ArrayList<>();
+        dockerIsPresent = isDockerWorking();
     }
 
-    public DockerClientRule() {
+    public DockerClientSupport() {
         this(DockerClientConfig.createDefaultConfigBuilder().build());
+    }
+
+    public boolean isDockerIsPresent() {
+        return dockerIsPresent;
     }
 
     public void addContainerIdToClean(String id) {
@@ -86,17 +99,6 @@ public class DockerClientRule extends ExternalResource {
         }
     }
 
-    @Override
-    protected void before() throws Throwable {
-        super.before();
-        containerToClean.clear();
-    }
-
-    @Override
-    protected void after() {
-        super.after();
-        stopAndRemoveContainer();
-    }
 
     public String getContainerName(String containerId) {
         InspectContainerResponse inspectContainerResponse = dockerClient.inspectContainerCmd(containerId).exec();
@@ -113,6 +115,12 @@ public class DockerClientRule extends ExternalResource {
         return bindingsExposed[0].getHostPort();
     }
 
+    public String getHttpContainerUrl(String containerId, int containerPort) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("http://").append(getServerIp()).append(":").append(getExposedPort(containerId, containerPort));
+        return sb.toString();
+    }
+
     public void stopAndRemoveContainer() {
         containerToClean.forEach(id -> {
             dockerClient.stopContainerCmd(id).exec();
@@ -126,10 +134,18 @@ public class DockerClientRule extends ExternalResource {
         return dockerClient;
     }
 
+    public boolean isDockerWorking() {
+        return !isNotWorking(dockerClient);
+    }
+
     private boolean isNotWorking(DockerClient dockerClient) {
+        if (dockerClient == null) {
+            return true;
+        }
         try {
-            dockerClient.listImagesCmd().exec();
-            return false;
+            Version version = dockerClient.versionCmd().exec();
+
+            return version == null || StringUtils.isBlank(version.getGitCommit());
         } catch (Exception e) {
             return true;
         }
@@ -167,16 +183,15 @@ public class DockerClientRule extends ExternalResource {
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
                     Thread.interrupted();
-                    System.err.println("Break");
                     break;
                 }
                 now = System.currentTimeMillis();
                 until = endTime - now;
-                //System.out.println("Until " + until);
             }
         } while (until > 0 && !available);
-        System.out.println(url + " " + (available ? "Success" : "Failed after " + nbTry + " try"));
-
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(url + " " + (available ? "Success" : "Failed after " + nbTry + " try"));
+        }
     }
 
     private boolean tryRequest(HttpUrl url, OkHttpClient httpClient) {
@@ -184,7 +199,9 @@ public class DockerClientRule extends ExternalResource {
             Request request = new Request.Builder().url(url).get().build();
             Call call = httpClient.newCall(request);
             Response response = call.execute();
-            return response.isSuccessful();
+            boolean isSuccesseful = response.isSuccessful();
+            response.body().close();
+            return isSuccesseful;
         } catch (IOException e) {
             return false;
         }

@@ -28,11 +28,14 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.*;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.*;
-import io.kodokojo.docker.service.DockerClientRule;
+import io.kodokojo.docker.service.DockerClientSupport;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
+import org.hamcrest.CoreMatchers;
+import org.junit.Assume;
 import org.junit.Rule;
+import org.junit.runners.model.Statement;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -46,7 +49,7 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
 
     @Rule
     @ProvidedScenarioState
-    public DockerClientRule dockerClientRule = new DockerClientRule();
+    public DockerClientSupport dockerClientSupport = new DockerClientSupport();
 
     @ProvidedScenarioState
     DockerClient dockerClient;
@@ -65,23 +68,29 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
 
     @BeforeScenario
     public void create_a_docker_client() {
-        dockerClient = dockerClientRule.getDockerClient();
+        dockerClient = dockerClientSupport.getDockerClient();
     }
 
     @AfterScenario
     public void tear_down() {
-        dockerClientRule.stopAndRemoveContainer();
+        dockerClientSupport.stopAndRemoveContainer();
     }
 
     public DockerCommonsGiven $_is_pull(@Quoted String imageName) {
-        dockerClientRule.pullImage(imageName);
+        dockerClientSupport.pullImage(imageName);
         return self();
     }
 
     public DockerCommonsGiven kodokojo_docker_image_manager_is_started() {
-        dockerClientRule.pullImage("java:8-jre");
+        dockerClientSupport.pullImage("java:8-jre");
 
         File baseDire = new File("");
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(baseDire.getAbsolutePath()).append(File.separator);
+        stringBuilder.append("src").append(File.separator).append("test").append(File.separator).append("resources");
+        stringBuilder.append(File.separator).append("int-logback-config.xml");
+        String logbackConfigPath = stringBuilder.toString();
+        File logbakcConfigFile = new File(logbackConfigPath);
         File targetFile = new File(baseDire.getAbsolutePath() + File.separator + "target");
         File projectJarFile = FileUtils.listFiles(targetFile, new RegexFileFilter("docker-image-manager-([\\.\\d]*)(-SNAPSHOT)?.jar"), FalseFileFilter.FALSE).stream().findFirst().get();
 
@@ -90,22 +99,22 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
         portBinding.bind(exposedPort, Ports.Binding(null));
 
         CreateContainerResponse containerResponseId = dockerClient.createContainerCmd("java:8-jre")
-                .withBinds(new Bind(baseDire.getAbsolutePath(), new Volume("/project")))
+                .withBinds(new Bind(projectJarFile.getAbsolutePath(), new Volume("/project/app.jar")), new Bind(logbakcConfigFile.getAbsolutePath(), new Volume("/project/int-logback-config.xml")))
                 .withPortBindings(portBinding)
                 .withExposedPorts(exposedPort)
                 .withWorkingDir("/project")
-                .withCmd("java", "-jar", "/project/target/" + projectJarFile.getName())
+                .withCmd("java", "-Dlogback.configurationFile=/project/int-logback-config.xml", "-jar", "/project/app.jar")
                 .exec();
+        // TODO: Add custom logback configuration.
         this.containerId = containerResponseId.getId();
         containers.put(DOCKER_IMAGE_MANAGER_KEY, containerId);
-        this.containerName = dockerClientRule.getContainerName(this.containerId);
+        this.containerName = dockerClientSupport.getContainerName(this.containerId);
         dockerClient.startContainerCmd(containerResponseId.getId()).exec();
-        dockerClientRule.addContainerIdToClean(containerResponseId.getId());
+        dockerClientSupport.addContainerIdToClean(containerResponseId.getId());
 
-        int portService = dockerClientRule.getExposedPort(containerId, 8080);
-        String url = "http://" + dockerClientRule.getServerIp() + ":" + portService + "/api";
+        String url = dockerClientSupport.getHttpContainerUrl(containerId, 8080) + "/api";
 
-        dockerClientRule.waitUntilHttpRequestRespond(url, 5000);
+        dockerClientSupport.waitUntilHttpRequestRespond(url, 5000);
         return self();
     }
 
@@ -126,9 +135,9 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
                 .exec();
         /*
         this.containerId = containerResponseId.getId();
-        this.containerName = dockerClientRule.getContainerName(this.containerId);
+        this.containerName = dockerClientSupport.getContainerName(this.containerId);
         */
-        dockerClientRule.addContainerIdToClean(containerResponseId.getId());
+        dockerClientSupport.addContainerIdToClean(containerResponseId.getId());
         dockerClient.startContainerCmd(containerResponseId.getId()).exec();
         try {
             Thread.sleep(1000);
@@ -150,7 +159,7 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
                 .withPortBindings(portBinding)
                 .withLinks(new Link(containerId, "dockerimagemanager"))
                 .exec();
-        dockerClientRule.addContainerIdToClean(registryCmd.getId());
+        dockerClientSupport.addContainerIdToClean(registryCmd.getId());
         dockerClient.startContainerCmd(registryCmd.getId()).exec();
         InspectContainerResponse inspectContainerResponse = dockerClient.inspectContainerCmd(registryCmd.getId()).exec();
         Map<ExposedPort, Ports.Binding[]> bindings = inspectContainerResponse.getNetworkSettings().getPorts().getBindings();
@@ -158,8 +167,8 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
         Ports.Binding[] bindingsExposed = bindings.get(ExposedPort.tcp(5000));
         registryPort = bindingsExposed[0].getHostPort();
 
-        String url = "http://" + dockerClientRule.getServerIp() + ":" + registryPort +"/v2/";
-        dockerClientRule.waitUntilHttpRequestRespond(url, 2500);
+        String url = "http://" + dockerClientSupport.getServerIp() + ":" + registryPort +"/v2/";
+        dockerClientSupport.waitUntilHttpRequestRespond(url, 2500);
 
         return self();
     }
