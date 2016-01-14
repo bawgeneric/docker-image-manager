@@ -31,11 +31,14 @@ import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.*;
+import io.kodokojo.docker.model.ImageName;
+import io.kodokojo.docker.model.StringToImageNameConverter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.NameFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.lang.StringUtils;
 import org.junit.rules.TestRule;
 import org.junit.runner.*;
 import org.junit.runners.model.Statement;
@@ -58,8 +61,16 @@ public class DockerCommonsWhen extends Stage<DockerCommonsWhen> {
         if (registryPort <= 0) {
             throw new IllegalStateException("Registry port not available");
         }
-        String imageNameToRegistry = "localhost:" + registryPort + "/" + imageName;
+        ImageName converted = StringToImageNameConverter.convert(imageName);
+        StringBuilder sb = new StringBuilder();
+        sb.append("localhost:").append(registryPort).append("/");
+        if (StringUtils.isNotBlank(converted.getNamespace())) {
+            sb.append(converted.getNamespace()).append("/");
+        }
+        sb.append(converted.getName());
+        String imageNameToRegistry = sb.toString();
         dockerClient.tagImageCmd(imageName, imageNameToRegistry, "").withForce().exec();
+
         dockerClient.pushImageCmd(imageNameToRegistry).exec(new PushImageResultCallback()).awaitSuccess();
         return self();
     }

@@ -155,11 +155,11 @@ public class DockerClientSupport {
         return remoteDaemonDockerIp;
     }
 
-    public void waitUntilHttpRequestRespond(String url, int time) {
-        waitUntilHttpRequestRespond(url, time, null);
+    public boolean waitUntilHttpRequestRespond(String url, int time) {
+        return waitUntilHttpRequestRespond(url, time, null);
     }
 
-    public void waitUntilHttpRequestRespond(String url, int time, TimeUnit unit) {
+    public boolean waitUntilHttpRequestRespond(String url, int time, TimeUnit unit) {
         if (isBlank(url)) {
             throw new IllegalArgumentException("url must be defined.");
         }
@@ -192,6 +192,7 @@ public class DockerClientSupport {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(url + " " + (available ? "Success" : "Failed after " + nbTry + " try"));
         }
+        return available;
     }
 
     private boolean tryRequest(HttpUrl url, OkHttpClient httpClient) {

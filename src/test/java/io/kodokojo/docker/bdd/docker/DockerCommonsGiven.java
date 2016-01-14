@@ -105,7 +105,7 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
                 .withWorkingDir("/project")
                 .withCmd("java", "-Dlogback.configurationFile=/project/int-logback-config.xml", "-jar", "/project/app.jar")
                 .exec();
-        // TODO: Add custom logback configuration.
+
         this.containerId = containerResponseId.getId();
         containers.put(DOCKER_IMAGE_MANAGER_KEY, containerId);
         this.containerName = dockerClientSupport.getContainerName(this.containerId);
@@ -114,7 +114,11 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
 
         String url = dockerClientSupport.getHttpContainerUrl(containerId, 8080) + "/api";
 
-        dockerClientSupport.waitUntilHttpRequestRespond(url, 5000);
+        int timeout = 15000;
+        boolean available = dockerClientSupport.waitUntilHttpRequestRespond(url, timeout);
+        if (!available) {
+            throw new IllegalStateException("Unable to obtain an available Docker image manager after " + timeout);
+        }
         return self();
     }
 
@@ -133,10 +137,7 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
                 .withPortBindings(portBindings.toArray(new PortBinding[0]))
                 .withExposedPorts(exposedPorts.toArray(new ExposedPort[0]))
                 .exec();
-        /*
-        this.containerId = containerResponseId.getId();
-        this.containerName = dockerClientSupport.getContainerName(this.containerId);
-        */
+
         dockerClientSupport.addContainerIdToClean(containerResponseId.getId());
         dockerClient.startContainerCmd(containerResponseId.getId()).exec();
         try {
@@ -166,10 +167,8 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
 
         Ports.Binding[] bindingsExposed = bindings.get(ExposedPort.tcp(5000));
         registryPort = bindingsExposed[0].getHostPort();
-
-        String url = "http://" + dockerClientSupport.getServerIp() + ":" + registryPort +"/v2/";
+        String url = dockerClientSupport.getHttpContainerUrl(registryCmd.getId(), 5000) + "/v2/";
         dockerClientSupport.waitUntilHttpRequestRespond(url, 2500);
-
         return self();
     }
 

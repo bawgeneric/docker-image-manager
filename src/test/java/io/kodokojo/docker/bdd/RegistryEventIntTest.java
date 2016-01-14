@@ -29,11 +29,12 @@ import io.kodokojo.docker.DockerPresentMethodRule;
 import io.kodokojo.docker.bdd.docker.DockerCommonsGiven;
 import io.kodokojo.docker.bdd.docker.DockerCommonsWhen;
 import io.kodokojo.docker.bdd.docker.DockerRegistryThen;
+import io.kodokojo.docker.bdd.restentrypoint.RestEntryPointThen;
 import org.junit.Rule;
 import org.junit.Test;
 
 @As("RegistryEvent integration tests")
-public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, DockerCommonsWhen, DockerRegistryThen<?>> {
+public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, DockerCommonsWhen, RestEntryPointThen<?>> {
 
     @Rule
     public DockerPresentMethodRule dockerPresentMethodRule = new DockerPresentMethodRule();
@@ -42,14 +43,18 @@ public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, Docke
     @DockerIsRequire
     public void push_busybox_to_registry() {
 
+        DockerRegistryThen<?> dockerRegistryThen = addStage(DockerRegistryThen.class);
+
         String image = "busybox:latest";
-        String name = "busybox";
 
         given().$_is_pull(image)
                 .and().kodokojo_docker_image_manager_is_started()
                 .and().registry_is_started();
-        when().push_image_$_to_registry(name);
-        then().docker_image_manager_receive_image_$(name)
+
+        when().push_image_$_to_registry(image);
+
+        then().repository_contain_a_Dockerfile_of_$_image(image);
+        dockerRegistryThen
                 .and().attach_docker_image_manager_logs();
     }
 

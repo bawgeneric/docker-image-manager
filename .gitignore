@@ -4,3 +4,4 @@
 *.class
 /jgiven-reports
 /dependency-reduced-pom.xml
+/workspace
