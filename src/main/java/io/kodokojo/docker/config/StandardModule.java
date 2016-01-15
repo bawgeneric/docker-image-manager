@@ -46,10 +46,8 @@ import java.io.File;
 
 public class StandardModule extends AbstractModule {
 
-
-    //private final String gitUrl = "git@github.com:kodokojo/acme.git";
+    // TODO Provide a configuration provider.
     private final String gitUrl = "https://github.com/kodokojo/acme.git";
-
     private final String libraryPath = "bashbrew/library";
 
     @Override

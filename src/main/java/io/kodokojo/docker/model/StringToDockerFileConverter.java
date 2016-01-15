@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
+//  TODO Move this class in a docker-commons project
 public class StringToDockerFileConverter  {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StringToDockerFileConverter.class);

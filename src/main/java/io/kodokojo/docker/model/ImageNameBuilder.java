@@ -24,6 +24,7 @@ package io.kodokojo.docker.model;
 
 import org.apache.commons.lang.StringUtils;
 
+//  TODO Move this class in a docker-commons project
 public class ImageNameBuilder {
 
     private String repository;

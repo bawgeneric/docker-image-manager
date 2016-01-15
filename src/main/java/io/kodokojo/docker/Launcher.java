@@ -39,7 +39,7 @@ public class Launcher {
 
         RestEntryPoint entryPoint = injector.getInstance(RestEntryPoint.class);
         entryPoint.start();
-        
+
     }
 
 }

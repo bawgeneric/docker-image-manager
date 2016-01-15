@@ -58,7 +58,7 @@ public class DockerBuildPlanOrchestratorThen<SELF extends DockerBuildPlanOrchest
         return self();
     }
 
-    public SELF docker_build_plan_orchestrator_NOT_not_a_DockerBuildPlan_for_image_$(@Quoted String imageNameStr) {
+    public SELF docker_build_plan_orchestrator_NOT_contain_a_DockerBuildPlan_for_image_$(@Quoted String imageNameStr) {
         if (isBlank(imageNameStr)) {
             throw new IllegalArgumentException("imageNameStr must be defined.");
         }

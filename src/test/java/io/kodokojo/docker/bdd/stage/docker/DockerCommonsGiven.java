@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+//  TODO Move this class in a docker-commons project
 public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
 
     public static final String DOCKER_IMAGE_MANAGER_KEY = "docker-image-manager";

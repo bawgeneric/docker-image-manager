@@ -26,7 +26,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
-
+//  TODO Move this class in a docker-commons project
 public class ImageName {
 
     public static final String DEFAULT_NAMESPACE = "library";

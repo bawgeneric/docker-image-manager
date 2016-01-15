@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
+//  TODO Move this class in a docker-commons project
 public class DockerCommonsThen<SELF extends DockerCommonsThen<SELF>> extends Stage<SELF> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerCommonsThen.class);

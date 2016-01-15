@@ -24,6 +24,7 @@ package io.kodokojo.docker.model;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
+//  TODO Move this class in a docker-commons project
 public class DockerFile {
 
     private final ImageName imageName;

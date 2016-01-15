@@ -40,6 +40,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+//  TODO Move this class in a docker-commons project
 public class StringToImageNameConverter implements Function<String, ImageName> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StringToImageNameConverter.class);
