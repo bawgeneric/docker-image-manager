@@ -1,4 +1,4 @@
-package io.kodokojo.docker.service;
+package io.kodokojo.docker.utils;
 
 /*
  * #%L
@@ -48,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
+//  TODO Move this class in a docker-commons project
 public class DockerClientSupport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerClientSupport.class);

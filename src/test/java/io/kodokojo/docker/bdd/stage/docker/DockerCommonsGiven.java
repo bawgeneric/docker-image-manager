@@ -28,7 +28,7 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.*;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.*;
-import io.kodokojo.docker.service.DockerClientSupport;
+import io.kodokojo.docker.utils.DockerClientSupport;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
@@ -103,7 +103,7 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
                 .withPortBindings(portBinding)
                 .withExposedPorts(exposedPort)
                 .withWorkingDir("/project")
-                .withCmd("java", "-Dlogback.configurationFile=/project/int-logback-config.xml", "-jar", "/project/app.jar")
+                .withCmd("java", "-Dlogback.configurationFile=\"/project/int-logback-config.xml\"","-Dgit.bashbrew.url=git://github.com/kodokojo/acme" , "-Dgit.bashbrew.library.path=bashbrew/library", "-jar", "/project/app.jar")
                 .exec();
 
         this.containerId = containerResponseId.getId();
@@ -114,7 +114,7 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
 
         String url = dockerClientSupport.getHttpContainerUrl(containerId, 8080) + "/api";
 
-        int timeout = 15000;
+        int timeout = 5000;
         boolean available = dockerClientSupport.waitUntilHttpRequestRespond(url, timeout);
         if (!available) {
             throw new IllegalStateException("Unable to obtain an available Docker image manager after " + timeout);

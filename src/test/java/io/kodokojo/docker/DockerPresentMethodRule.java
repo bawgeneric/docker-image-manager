@@ -22,7 +22,7 @@ package io.kodokojo.docker;
  * #L%
  */
 
-import io.kodokojo.docker.service.DockerClientSupport;
+import io.kodokojo.docker.utils.DockerClientSupport;
 import org.junit.Assume;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;

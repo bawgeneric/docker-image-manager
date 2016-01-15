@@ -27,7 +27,7 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
-import io.kodokojo.docker.service.DockerClientSupport;
+import io.kodokojo.docker.utils.DockerClientSupport;
 
 import java.io.IOException;
 

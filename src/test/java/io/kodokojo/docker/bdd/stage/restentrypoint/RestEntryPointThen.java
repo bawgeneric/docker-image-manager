@@ -22,9 +22,6 @@ package io.kodokojo.docker.bdd.stage.restentrypoint;
  * #L%
  */
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
 import com.tngtech.jgiven.annotation.Quoted;
 import io.kodokojo.docker.bdd.stage.AbstractRestStage;
@@ -32,13 +29,8 @@ import io.kodokojo.docker.bdd.stage.docker.DockerCommonsGiven;
 import io.kodokojo.docker.model.DockerFile;
 import io.kodokojo.docker.model.ImageName;
 import io.kodokojo.docker.model.StringToImageNameConverter;
-import io.kodokojo.docker.service.DockerClientSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import retrofit.RestAdapter;
-import retrofit.converter.GsonConverter;
-import retrofit.http.GET;
-import retrofit.http.Path;
 
 import java.util.HashMap;
 import java.util.Map;

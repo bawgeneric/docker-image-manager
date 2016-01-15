@@ -40,15 +40,13 @@ import io.kodokojo.docker.service.back.DefaultDockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.connector.git.DockerFileSource;
 import io.kodokojo.docker.service.connector.git.GitBashbrewDockerFileSource;
+import io.kodokojo.docker.utils.properties.PropertyResolver;
+import io.kodokojo.docker.utils.properties.SystemPropertyValueProvider;
 
 import javax.inject.Named;
 import java.io.File;
 
 public class StandardModule extends AbstractModule {
-
-    // TODO Provide a configuration provider.
-    private final String gitUrl = "https://github.com/kodokojo/acme.git";
-    private final String libraryPath = "bashbrew/library";
 
     @Override
     protected void configure() {
@@ -59,10 +57,18 @@ public class StandardModule extends AbstractModule {
 
     @Provides
     @Singleton
-    DockerFileSource provideDockerFileFetcher(DockerFileRepository dockerFileRepository) {
+    GitBashbrewConfig provideGitBashbrewConfig() {
+        SystemPropertyValueProvider valueProvider = new SystemPropertyValueProvider();
+        PropertyResolver propertyResolver = new PropertyResolver(valueProvider);
+        return propertyResolver.createProxy(GitBashbrewConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    DockerFileSource provideDockerFileSource(DockerFileRepository dockerFileRepository, GitBashbrewConfig gitBashbrewConfig) {
         File baseDire = new File("");
         String workspace = baseDire.getAbsolutePath() + File.separator + "workspace";
-        return new GitBashbrewDockerFileSource(workspace, null, gitUrl, libraryPath, dockerFileRepository);
+        return new GitBashbrewDockerFileSource(workspace, null, gitBashbrewConfig.bashbrewGitUrl(), gitBashbrewConfig.bashbrewLibraryPath(), dockerFileRepository);
     }
 
     @Provides

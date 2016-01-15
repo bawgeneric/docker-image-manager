@@ -1,4 +1,4 @@
-package io.kodokojo.docker.bdd.feature;
+package io.kodokojo.docker.utils.properties;
 
 /*
  * #%L
@@ -22,7 +22,6 @@ package io.kodokojo.docker.bdd.feature;
  * #L%
  */
 
-
-public class DockerFileBuildPlanInTest {
-
+public interface PropertyConfig {
+    //  Tagging interface
 }

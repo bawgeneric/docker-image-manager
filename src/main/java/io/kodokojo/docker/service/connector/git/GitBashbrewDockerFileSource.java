@@ -60,6 +60,7 @@ import java.util.regex.Pattern;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
+//  TODO May need to be split to improve readability
 public class GitBashbrewDockerFileSource implements DockerFileSource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GitBashbrewDockerFileSource.class);
