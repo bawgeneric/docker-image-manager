@@ -121,6 +121,22 @@ public class StringToImageNameConverterTest {
         assertThat(res.getTag()).isEqualTo("2.1.3-beta");
     }
 
+    @Test
+    public void valide_with_repository_with_namespace_with_name_and_tag_in_upper_case() {
+        String input = "dockerregistry.kodokojo.io:5000/Jpthiery/Grafana:2.1.3-Beta";
+        ImageName res = converter.apply(input);
+
+        assertThat(res).isNotNull();
+        assertThat(res.getRepository()).isNotEmpty();
+        assertThat(res.getRepository()).isEqualTo("dockerregistry.kodokojo.io:5000");
+        assertThat(res.getNamespace()).isNotEmpty();
+        assertThat(res.getNamespace()).isEqualTo("jpthiery");
+        assertThat(res.getName()).isNotEmpty();
+        assertThat(res.getName()).isEqualTo("grafana");
+        assertThat(res.getTag()).isNotEmpty();
+        assertThat(res.getTag()).isEqualTo("2.1.3-beta");
+    }
+
 
 
 }

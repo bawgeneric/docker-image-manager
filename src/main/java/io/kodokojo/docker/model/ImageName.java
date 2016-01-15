@@ -27,12 +27,11 @@ import org.apache.commons.lang.StringUtils;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Created by Jean-Pascal THIERY on 28/10/15.
- */
 public class ImageName {
 
     public static final String DEFAULT_NAMESPACE = "library";
+
+    public static final String TAG_LATEST = "latest";
 
     private final String repository;
 
@@ -49,16 +48,16 @@ public class ImageName {
         if (StringUtils.isBlank(namespace)) {
             this.namespace = DEFAULT_NAMESPACE;
         } else {
-            this.namespace = namespace;
+            this.namespace = namespace.toLowerCase();
         }
         if (StringUtils.isBlank(name)) {
             throw new IllegalArgumentException("name  must be defined.");
         }
-        this.name = name;
+        this.name = name.toLowerCase();
         if (StringUtils.isBlank(tag)) {
-            this.tag = "latest";
+            this.tag = TAG_LATEST;
         } else {
-            this.tag = tag;
+            this.tag = tag.toLowerCase();
         }
         this.tags = Collections.singletonList(this.tag);
     }
