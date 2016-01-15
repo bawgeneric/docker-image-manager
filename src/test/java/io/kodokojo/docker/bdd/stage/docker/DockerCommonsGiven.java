@@ -1,4 +1,4 @@
-package io.kodokojo.docker.bdd.docker;
+package io.kodokojo.docker.bdd.stage.docker;
 
 /*
  * #%L
@@ -32,10 +32,7 @@ import io.kodokojo.docker.service.DockerClientSupport;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
-import org.hamcrest.CoreMatchers;
-import org.junit.Assume;
 import org.junit.Rule;
-import org.junit.runners.model.Statement;
 
 import java.io.File;
 import java.util.ArrayList;

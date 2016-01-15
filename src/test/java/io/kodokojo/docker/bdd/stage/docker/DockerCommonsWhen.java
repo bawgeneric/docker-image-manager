@@ -1,4 +1,4 @@
-package io.kodokojo.docker.bdd.docker;
+package io.kodokojo.docker.bdd.stage.docker;
 
 /*
  * #%L
@@ -23,31 +23,12 @@ package io.kodokojo.docker.bdd.docker;
  */
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.InspectExecResponse;
-import com.github.dockerjava.api.model.*;
-import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.*;
 import io.kodokojo.docker.model.ImageName;
 import io.kodokojo.docker.model.StringToImageNameConverter;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FalseFileFilter;
-import org.apache.commons.io.filefilter.NameFileFilter;
-import org.apache.commons.io.filefilter.RegexFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang.StringUtils;
-import org.junit.rules.TestRule;
-import org.junit.runner.*;
-import org.junit.runners.model.Statement;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class DockerCommonsWhen extends Stage<DockerCommonsWhen> {
 

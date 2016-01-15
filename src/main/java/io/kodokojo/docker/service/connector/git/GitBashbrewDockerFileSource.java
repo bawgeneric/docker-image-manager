@@ -51,15 +51,18 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
-public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
+public class GitBashbrewDockerFileSource implements DockerFileSource {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GitBashbrewDockerFileFetcher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GitBashbrewDockerFileSource.class);
 
     private static final Pattern LIBRARY_CONTENT_PATTERN = Pattern.compile("^([^ #]*): ([^ @]*)@([^ ]*) ([^ ]*)$");
 
@@ -68,6 +71,10 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
     private static final String BASHBREW_GIT_DIRECTORY = "bashbrew/";
 
     private static final String GIT_DIRECTORY = ".git";
+
+    private static final long DEFAULT_BASHBREW_PULL_DELAY = TimeUnit.MILLISECONDS.convert(1,TimeUnit.MINUTES);
+
+    private static final long DEFAULT_DOCKERFILE_GIT_PULL_DELAY = TimeUnit.MILLISECONDS.convert(5,TimeUnit.MINUTES);
 
     private final File libraryDirectory;
 
@@ -79,7 +86,15 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
 
     private final File dockerfileGitDir;
 
-    public GitBashbrewDockerFileFetcher(String localWorkspace, String defaultUser, String bashbrewGitUrl, String bashbrewGitLibraryPath, DockerFileRepository dockerFileRepository) {
+    private final long delayPeriodBetweenPullBaswbrewGit;
+
+    private final long delayPeriodBetweenPullDockerFileGit;
+
+    private final Map<ImageName, Long> lastDockerFileGitPullDates;
+
+    private long lastBashbrewPullDate = 0;
+
+    public GitBashbrewDockerFileSource(String localWorkspace, String defaultUser, String bashbrewGitUrl, String bashbrewGitLibraryPath, DockerFileRepository dockerFileRepository, long delayPeriodBetweenPullBaswbrewGit, long delayPeriodBetweenPullDockerFileGit) {
         if (isBlank(localWorkspace)) {
             throw new IllegalArgumentException("localWorkspace must be defined.");
         }
@@ -88,6 +103,10 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
         }
         this.dockerFileRepository = dockerFileRepository;
         this.defaultUser = defaultUser;
+        this.delayPeriodBetweenPullBaswbrewGit = delayPeriodBetweenPullBaswbrewGit;
+        this.delayPeriodBetweenPullDockerFileGit = delayPeriodBetweenPullDockerFileGit;
+        this.lastDockerFileGitPullDates = new HashMap<>();
+
         File workspace = new File(localWorkspace);
         if (!workspace.exists()) {
             workspace.mkdirs();
@@ -112,7 +131,9 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
             try {
                 Repository repository = new FileRepository(bashbrewGitWorkerDir);
                 git = Git.wrap(repository);
-                System.out.println("Plug repository " + bashbrewGitDir);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Plug repository {}.", bashbrewGitDir);
+                }
             } catch (IOException e) {
                 throw new IllegalStateException("An unexpected error occur while trying to plug Git repository " + bashbrewGitUrl, e);
             }
@@ -122,12 +143,16 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
 
             try {
                 git = Git.cloneRepository().setURI(bashbrewGitUrl).setDirectory(bashbrewGitDir).call();
-                System.out.println("Clone repository " + bashbrewGitUrl);
+                LOGGER.info("Clone repository {}.", bashbrewGitUrl);
             } catch (GitAPIException e) {
                 throw new IllegalStateException("An unexpected error occur while trying to clone Git repository " + bashbrewGitUrl, e);
             }
         }
         libraryDirectory = new File(bashbrewGitDir + File.separator + bashbrewGitLibraryPath);
+    }
+
+    public GitBashbrewDockerFileSource(String localWorkspace, String defaultUser, String bashbrewGitUrl, String bashbrewGitLibraryPath, DockerFileRepository dockerFileRepository) {
+        this(localWorkspace, defaultUser, bashbrewGitUrl, bashbrewGitLibraryPath, dockerFileRepository, DEFAULT_BASHBREW_PULL_DELAY, DEFAULT_DOCKERFILE_GIT_PULL_DELAY);
     }
 
     @Override
@@ -155,6 +180,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
         });
 
         addDockerFilesToDockerFileRepository(dockerFileEntries);
+        LOGGER.info("Fetch {} Dockerfile.", dockerFileEntries.size());
 
     }
 
@@ -172,7 +198,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
 
 
     @Override
-    public void fetchDockerFile(ImageName imageName) {
+    public boolean fetchDockerFile(ImageName imageName) {
         if (imageName == null) {
             throw new IllegalArgumentException("imageName must be defined.");
         }
@@ -194,8 +220,13 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
             imageNameBuilder.setName(imageName.getName());
             List<DockerFileEntry> dockerFileEntries = convertBashbrewFileToDockerfileEntries(libraryFileContent, StringUtils.isBlank(imageName.getTag()) ? null : imageName.getTag(), imageNameBuilder);
             addDockerFilesToDockerFileRepository(dockerFileEntries);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("DockerFile {} successfully fetched : {}", imageName.getFullyQualifiedName() ,dockerFileEntries.toString());
+            }
+            return true;
         } catch (IOException e) {
             LOGGER.error("Unable to read content of file " + libraryFile.getAbsolutePath(), e);
+            return false;
         }
     }
 
@@ -268,6 +299,7 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
 
     //Source : https://github.com/centic9/jgit-cookbook/blob/master/src/main/java/org/dstadler/jgit/api/ReadFileFromCommit.java
     private String getFileContent(Repository repository, DockerFileEntry entry) {
+        pullDockerFileRepository(repository, entry);
         String res = null;
         try (RevWalk revWalk = new RevWalk(repository)) {
             ObjectId lastCommitId = repository.resolve(entry.getGitRef());
@@ -305,19 +337,45 @@ public class GitBashbrewDockerFileFetcher implements DockerFileFetcher {
         return res;
     }
 
+    private void pullDockerFileRepository(Repository repository, DockerFileEntry entry) {
+
+        long now = System.currentTimeMillis();
+        Long tmpLastGitPull = lastDockerFileGitPullDates.get(entry.getImageName());
+        long lastGitPull = tmpLastGitPull != null ? tmpLastGitPull : 0;
+        long timeSinceLastPull = Math.abs(now - lastGitPull);
+        if (timeSinceLastPull > delayPeriodBetweenPullBaswbrewGit) {
+            try {
+                Git.wrap(repository).pull().call();
+                lastDockerFileGitPullDates.put(entry.getImageName(), now);
+            } catch (GitAPIException e) {
+                LOGGER.error("Unable to pull from " + git.getRepository().toString(), e);
+            }
+        } else if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Last pull on Bashbrew Git done to soon, abort the Git pull.");
+
+        }
+    }
+
 
     private void pullBashbrewRepository() {
-        try {
-            PullResult call = git.pull().call();
-            if (LOGGER.isDebugEnabled()) {
-                if (call.isSuccessful()) {
-                    LOGGER.debug("Successfully pull git repot {}", call.getFetchedFrom());
-                } else {
-                    LOGGER.debug("Fail to pull git repot {}", call.getFetchedFrom());
+        long now = System.currentTimeMillis();
+        long timeSinceLastPull = Math.abs(now - lastBashbrewPullDate);
+        if (timeSinceLastPull > delayPeriodBetweenPullBaswbrewGit) {
+            try {
+                PullResult call = git.pull().call();
+                lastBashbrewPullDate = now;
+                if (LOGGER.isDebugEnabled()) {
+                    if (call.isSuccessful()) {
+                        LOGGER.debug("Successfully pull git repot {}", call.getFetchedFrom());
+                    } else {
+                        LOGGER.debug("Fail to pull git repot {}", call.getFetchedFrom());
+                    }
                 }
+            } catch (GitAPIException e) {
+                LOGGER.error("Unable to pull from " + git.getRepository().toString(), e);
             }
-        } catch (GitAPIException e) {
-            LOGGER.error("Unable to pull from " + git.getRepository().toString(), e);
+        } else if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Last pull on Bashbrew Git done to soon, abort the Git pull.");
         }
     }
 

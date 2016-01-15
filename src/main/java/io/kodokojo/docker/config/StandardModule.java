@@ -38,8 +38,8 @@ import io.kodokojo.docker.service.actor.PushEventDispatcher;
 import io.kodokojo.docker.service.actor.RegistryRequestWorker;
 import io.kodokojo.docker.service.back.DefaultDockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
-import io.kodokojo.docker.service.connector.git.DockerFileFetcher;
-import io.kodokojo.docker.service.connector.git.GitBashbrewDockerFileFetcher;
+import io.kodokojo.docker.service.connector.git.DockerFileSource;
+import io.kodokojo.docker.service.connector.git.GitBashbrewDockerFileSource;
 
 import javax.inject.Named;
 import java.io.File;
@@ -61,10 +61,10 @@ public class StandardModule extends AbstractModule {
 
     @Provides
     @Singleton
-    DockerFileFetcher provideDockerFileFetcher(DockerFileRepository dockerFileRepository) {
+    DockerFileSource provideDockerFileFetcher(DockerFileRepository dockerFileRepository) {
         File baseDire = new File("");
         String workspace = baseDire.getAbsolutePath() + File.separator + "workspace";
-        return new GitBashbrewDockerFileFetcher(workspace, null, gitUrl, libraryPath, dockerFileRepository);
+        return new GitBashbrewDockerFileSource(workspace, null, gitUrl, libraryPath, dockerFileRepository);
     }
 
     @Provides
@@ -109,7 +109,7 @@ public class StandardModule extends AbstractModule {
 
     @Provides
     @Singleton
-    DockerFileBuildOrchestrator provideDockerFileBuildOrchestrator(DockerFileRepository dockerFileRepository) {
-        return new DefaultDockerFileBuildOrchestrator(dockerFileRepository);
+    DockerFileBuildOrchestrator provideDockerFileBuildOrchestrator(DockerFileRepository dockerFileRepository, DockerFileSource dockerFileSource) {
+        return new DefaultDockerFileBuildOrchestrator(dockerFileRepository, dockerFileSource);
     }
 }

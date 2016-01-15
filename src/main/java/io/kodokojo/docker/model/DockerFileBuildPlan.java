@@ -91,10 +91,29 @@ public class DockerFileBuildPlan {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DockerFileBuildPlan that = (DockerFileBuildPlan) o;
+
+        return dockerFile.equals(that.dockerFile);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return dockerFile.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "DockerFileBuildPlan{" +
                 "dockerFile=" + dockerFile +
                 ", children=" + children +
+                ", launchBuildDate=" + launchBuildDate +
+                ", buildDate=" + buildDate +
+                ", lastUpdateDate=" + lastUpdateDate +
                 '}';
     }
 }

@@ -1,4 +1,4 @@
-package io.kodokojo.docker.bdd.docker;
+package io.kodokojo.docker.bdd.stage.docker;
 
 /*
  * #%L
@@ -25,18 +25,14 @@ package io.kodokojo.docker.bdd.docker;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.core.async.ResultCallbackTemplate;
-import com.github.dockerjava.core.command.LogContainerResultCallback;
 import com.tngtech.jgiven.CurrentStep;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
-import com.tngtech.jgiven.annotation.ScenarioState;
 import com.tngtech.jgiven.attachment.Attachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class DockerCommonsThen<SELF extends DockerCommonsThen<SELF>> extends Stage<SELF> {
@@ -58,6 +54,15 @@ public class DockerCommonsThen<SELF extends DockerCommonsThen<SELF>> extends Sta
     @ExpectedScenarioState
     CurrentStep currentStep;
 
+    public SELF waiting_$_seconds(int seconds) {
+        try {
+            Thread.sleep(seconds*1000);
+        } catch (InterruptedException e) {
+            Thread.interrupted();
+        }
+        return self();
+    }
+
     public SELF attach_log() {
         return attach_log(this.containerId);
     }
@@ -70,7 +75,7 @@ public class DockerCommonsThen<SELF extends DockerCommonsThen<SELF>> extends Sta
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.interrupted();
         }
         try {
             LogBuilder logBuilder = dockerClient.logContainerCmd(containerId).withStdOut().withStdErr().withTailAll().exec(new LogBuilder()).awaitCompletion();
@@ -81,6 +86,7 @@ public class DockerCommonsThen<SELF extends DockerCommonsThen<SELF>> extends Sta
             currentStep.addAttachment(logAttachment);
         } catch (InterruptedException e) {
             LOGGER.error("Unable to retrieve log", e);
+            Thread.interrupted();
         }
 
         return self();

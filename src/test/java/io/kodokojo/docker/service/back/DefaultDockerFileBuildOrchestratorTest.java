@@ -28,7 +28,7 @@ import io.kodokojo.docker.model.RegistryEvent;
 import io.kodokojo.docker.model.StringToImageNameConverter;
 import io.kodokojo.docker.service.DefaultDockerFileRepository;
 import io.kodokojo.docker.service.DockerFileRepository;
-import org.assertj.core.api.Assertions;
+import io.kodokojo.docker.service.connector.git.DockerFileSource;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -37,17 +37,20 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 @Ignore
 public class DefaultDockerFileBuildOrchestratorTest {
 
     private DockerFileBuildOrchestrator orchestrator;
 
+    private DockerFileSource dockerFileSourceMock;
+
     @Before
     public void setup() {
+        dockerFileSourceMock = mock(DockerFileSource.class);
         DockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
-        orchestrator = new DefaultDockerFileBuildOrchestrator(dockerFileRepository);
+        orchestrator = new DefaultDockerFileBuildOrchestrator(dockerFileRepository, dockerFileSourceMock);
     }
 
     @Test

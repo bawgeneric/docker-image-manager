@@ -1,4 +1,4 @@
-package io.kodokojo.docker.bdd;
+package io.kodokojo.docker.bdd.feature;
 
 /*
  * #%L
@@ -26,10 +26,10 @@ import com.tngtech.jgiven.annotation.As;
 import com.tngtech.jgiven.junit.ScenarioTest;
 import io.kodokojo.docker.DockerIsRequire;
 import io.kodokojo.docker.DockerPresentMethodRule;
-import io.kodokojo.docker.bdd.docker.DockerCommonsGiven;
-import io.kodokojo.docker.bdd.docker.DockerCommonsWhen;
-import io.kodokojo.docker.bdd.docker.DockerRegistryThen;
-import io.kodokojo.docker.bdd.restentrypoint.RestEntryPointThen;
+import io.kodokojo.docker.bdd.stage.docker.DockerCommonsGiven;
+import io.kodokojo.docker.bdd.stage.docker.DockerCommonsWhen;
+import io.kodokojo.docker.bdd.stage.docker.DockerRegistryThen;
+import io.kodokojo.docker.bdd.stage.restentrypoint.RestEntryPointThen;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -53,9 +53,10 @@ public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, Docke
 
         when().push_image_$_to_registry(image);
 
-        then().repository_contain_a_Dockerfile_of_$_image(image);
         dockerRegistryThen
-                .and().attach_docker_image_manager_logs();
+        .then().waiting_$_seconds(5)
+        .and().attach_docker_image_manager_logs();
+        then().and().repository_contain_a_Dockerfile_of_$_image(image);
     }
 
 }

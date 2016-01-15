@@ -34,7 +34,7 @@ import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class GitBashbrewDockerFileFetcherIntTest {
+public class GitBashbrewDockerFileSourceIntTest {
 
     private String gitUrl = "git://github.com/kodokojo/acme";
 
@@ -46,28 +46,27 @@ public class GitBashbrewDockerFileFetcherIntTest {
         String libraryPath = "bashbrew/library";
         File workspace = tmpFolder.newFolder();
         DefaultDockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
-        DockerFileFetcher dockerFileFetcher = new GitBashbrewDockerFileFetcher(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
+        DockerFileSource dockerFileSource = new GitBashbrewDockerFileSource(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
 
-        dockerFileFetcher.fetchDockerFile(StringToImageNameConverter.convert("kodokojo/busybox"));
+        dockerFileSource.fetchDockerFile(StringToImageNameConverter.convert("kodokojo/busybox"));
 
         DockerFile dockerFile = dockerFileRepository.getDockerFileFromImageName(StringToImageNameConverter.convert("kodokojo/busybox:latest"));
         assertThat(dockerFile).isNotNull();
         assertThat(dockerFile.getFrom().getFullyQualifiedName()).isEqualTo("library/centos:7");
-
     }
+
     @Test
     public void fetch_kodokojo_busybox_specific_tag_dockerfile() throws IOException {
         String libraryPath = "bashbrew/library";
         File workspace = tmpFolder.newFolder();
         DefaultDockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
-        DockerFileFetcher dockerFileFetcher = new GitBashbrewDockerFileFetcher(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
+        DockerFileSource dockerFileSource = new GitBashbrewDockerFileSource(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
 
-        dockerFileFetcher.fetchDockerFile(StringToImageNameConverter.convert("kodokojo/busybox:1.0.0"));
+        dockerFileSource.fetchDockerFile(StringToImageNameConverter.convert("kodokojo/busybox:1.0.0"));
 
         DockerFile dockerFile = dockerFileRepository.getDockerFileFromImageName(StringToImageNameConverter.convert("kodokojo/busybox:1.0.0"));
         assertThat(dockerFile).isNotNull();
         assertThat(dockerFile.getFrom().getFullyQualifiedName()).isEqualTo("library/centos:latest");
-
     }
 
     @Test
@@ -76,9 +75,9 @@ public class GitBashbrewDockerFileFetcherIntTest {
 
         File workspace = tmpFolder.newFolder();
         DefaultDockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
-        DockerFileFetcher dockerFileFetcher = new GitBashbrewDockerFileFetcher(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
+        DockerFileSource dockerFileSource = new GitBashbrewDockerFileSource(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
 
-        dockerFileFetcher.fetchAllDockerFile();
+        dockerFileSource.fetchAllDockerFile();
 
         DockerFile dockerFile = dockerFileRepository.getDockerFileFromImageName(StringToImageNameConverter.convert("kodokojo/busybox:latest"));
         assertThat(dockerFile).isNotNull();

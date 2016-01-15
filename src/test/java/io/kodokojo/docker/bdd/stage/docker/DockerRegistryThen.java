@@ -1,4 +1,4 @@
-package io.kodokojo.docker.bdd.docker;
+package io.kodokojo.docker.bdd.stage.docker;
 
 /*
  * #%L
