@@ -29,6 +29,7 @@ import io.kodokojo.docker.DockerPresentMethodRule;
 import io.kodokojo.docker.bdd.stage.docker.DockerCommonsGiven;
 import io.kodokojo.docker.bdd.stage.docker.DockerCommonsWhen;
 import io.kodokojo.docker.bdd.stage.docker.DockerRegistryThen;
+import io.kodokojo.docker.bdd.stage.dockerfilebuildplan.DockerBuildPlanOrchestratorThen;
 import io.kodokojo.docker.bdd.stage.restentrypoint.RestEntryPointThen;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,10 +42,11 @@ public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, Docke
 
     @Test
     @DockerIsRequire
-    public void push_busybox_to_registry() {
+    public void push_busybox_to_registry_and_get_valid_build_plan() {
 
         DockerRegistryThen<?> dockerRegistryThen = addStage(DockerRegistryThen.class);
-
+        DockerBuildPlanOrchestratorThen<?> dockerBuildPlanOrchestratorThen = addStage(DockerBuildPlanOrchestratorThen.class);
+        String parent = "centos:7";
         String image = "busybox:latest";
 
         given().$_is_pull(image)
@@ -56,6 +58,8 @@ public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, Docke
         dockerRegistryThen
         .then().waiting_$_seconds(5)
         .and().attach_docker_image_manager_logs();
+        dockerBuildPlanOrchestratorThen.and().docker_build_plan_orchestrator_contain_a_DockerBuildPlan_for_image_$(image)
+        .and().docker_build_plan_orchestrator_NOT_not_a_DockerBuildPlan_for_image_$(parent);
         then().and().repository_contain_a_Dockerfile_of_$_image(image);
     }
 

@@ -27,6 +27,7 @@ import com.google.gson.GsonBuilder;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
 import com.tngtech.jgiven.annotation.Quoted;
+import io.kodokojo.docker.bdd.stage.AbstractRestStage;
 import io.kodokojo.docker.bdd.stage.docker.DockerCommonsGiven;
 import io.kodokojo.docker.model.DockerFile;
 import io.kodokojo.docker.model.ImageName;
@@ -45,12 +46,9 @@ import java.util.Map;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Stage<SELF> {
+public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends AbstractRestStage<SELF> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestEntryPointThen.class);
-
-    @ExpectedScenarioState
-    DockerClientSupport dockerClientSupport;
 
     @ExpectedScenarioState
     Map<String, String> containers = new HashMap<>();
@@ -80,22 +78,6 @@ public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Stag
         assertThat(dockerFile).isNotNull();
 
         return self();
-    }
-
-    protected ClientRestEntryPoint provideClientRestEntryPoint(String baseUrl) {
-        Gson gson = new GsonBuilder().create();
-        RestAdapter restAdapter = new RestAdapter.Builder().setEndpoint(baseUrl).setConverter(new GsonConverter(gson)).build();
-        return restAdapter.create(ClientRestEntryPoint.class);
-    }
-
-    private interface ClientRestEntryPoint {
-
-        @GET("/api/repository/{namespace}/{name}/{tag}")
-        DockerFile getDockerFile(@Path("namespace") String namespace, @Path("name") String name, @Path("tag") String tag);
-
-        @GET("/api")
-        String apiVersion();
-
     }
 
 }

@@ -44,6 +44,8 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
 
     public static final String DOCKER_IMAGE_MANAGER_KEY = "docker-image-manager";
 
+    public static final int DOCKER_IMAGE_MANAGER_PORT = 8080;
+
     @Rule
     @ProvidedScenarioState
     public DockerClientSupport dockerClientSupport = new DockerClientSupport();

@@ -28,6 +28,7 @@ import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import io.kodokojo.docker.model.*;
 import io.kodokojo.docker.service.DockerFileRepository;
+import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
 import io.kodokojo.docker.utils.JsonTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,8 +60,10 @@ public class RestEntryPoint {
 
     private final DockerFileRepository dockerFileRepository;
 
+    private final DockerFileBuildOrchestrator dockerFileBuildOrchestrator;
+
     @Inject
-    public RestEntryPoint(@Named("pushEventDispatcher") ActorRef pushEventDispatcher, DockerFileRepository dockerFileRepository) {
+    public RestEntryPoint(@Named("pushEventDispatcher") ActorRef pushEventDispatcher, DockerFileRepository dockerFileRepository, DockerFileBuildOrchestrator dockerFileBuildOrchestrator) {
         if (pushEventDispatcher == null) {
             throw new IllegalArgumentException("pushEventDispatcher must be defined.");
         }
@@ -69,6 +72,10 @@ public class RestEntryPoint {
             throw new IllegalArgumentException("dockerFileRepository must be defined.");
         }
         this.dockerFileRepository = dockerFileRepository;
+        if (dockerFileBuildOrchestrator == null) {
+            throw new IllegalArgumentException("dockerFileBuildOrchestrator must be defined.");
+        }
+        this.dockerFileBuildOrchestrator = dockerFileBuildOrchestrator;
         jsonResponseTransformer = new JsonTransformer();
     }
 
@@ -103,6 +110,32 @@ public class RestEntryPoint {
             return null;
         });
 
+        get("/api/dockerbuildplan/:namespace/:name/:tag", JSON_CONTENT_TYPE, (request, response) -> {
+
+            String namespace = request.params(":namespace");
+            String name = request.params(":name");
+            String tag = request.params(":tag");
+
+            ImageNameBuilder builder = new ImageNameBuilder();
+            builder.setNamespace(namespace);
+            builder.setName(name);
+            builder.setTag(tag);
+            ImageName imageName = builder.build();
+
+            DockerFileBuildPlan dockerFileBuildPlan = dockerFileBuildOrchestrator.getBuildPlan(imageName);
+
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Request DockerFileBuildPlan for image {}, found : {}", imageName.getFullyQualifiedName(), dockerFileBuildPlan);
+            }
+
+            if (dockerFileBuildPlan == null) {
+                halt(404);
+            }
+
+            return dockerFileBuildPlan;
+
+        }, jsonResponseTransformer);
+
         get("/api/repository/:namespace/:name/:tag", JSON_CONTENT_TYPE, (request, response) -> {
 
             String namespace = request.params(":namespace");
@@ -115,6 +148,11 @@ public class RestEntryPoint {
             builder.setTag(tag);
             ImageName imageName = builder.build();
             DockerFile dockerFile = dockerFileRepository.getDockerFileFromImageName(imageName);
+
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Request DockerFile for image {}, found : {}", imageName.getFullyQualifiedName(), dockerFile);
+            }
+
             if (dockerFile == null) {
                 halt(404);
             }

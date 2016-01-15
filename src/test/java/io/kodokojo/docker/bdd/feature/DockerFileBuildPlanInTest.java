@@ -1,4 +1,4 @@
-package io.kodokojo.docker;
+package io.kodokojo.docker.bdd.feature;
 
 /*
  * #%L
@@ -22,24 +22,7 @@ package io.kodokojo.docker;
  * #L%
  */
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import io.kodokojo.docker.config.StandardModule;
-import io.kodokojo.docker.model.*;
-import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
-import io.kodokojo.docker.service.source.RestEntryPoint;
 
-import java.util.Collections;
-import java.util.Date;
-
-public class Launcher {
-
-    public static void main(String[] args) {
-        Injector injector = Guice.createInjector(new StandardModule());
-
-        RestEntryPoint entryPoint = injector.getInstance(RestEntryPoint.class);
-        entryPoint.start();
-        
-    }
+public class DockerFileBuildPlanInTest {
 
 }

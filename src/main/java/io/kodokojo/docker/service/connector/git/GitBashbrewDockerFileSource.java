@@ -243,6 +243,7 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
                 if (StringUtils.isBlank(tag) || tag.equals(currentTag)) {
                     ImageName imageName = imageNameBuilder.setTag(currentTag).build();
                     String gitUrl = matcher.group(2);
+                    //TODO Check url schemas to add this user only if it ssh connection only or remove this pattern
                     if (StringUtils.isNotBlank(defaultUser) && !gitUrl.contains("@")) {
                         gitUrl = defaultUser + "@" + gitUrl;
                     }
@@ -338,20 +339,24 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
     }
 
     private void pullDockerFileRepository(Repository repository, DockerFileEntry entry) {
+        assert repository != null : "repository must be defined";
+        assert entry != null : "entry must be defined";
 
         long now = System.currentTimeMillis();
-        Long tmpLastGitPull = lastDockerFileGitPullDates.get(entry.getImageName());
+
+        ImageName imageName = entry.getImageName();
+        Long tmpLastGitPull = lastDockerFileGitPullDates.get(imageName);
         long lastGitPull = tmpLastGitPull != null ? tmpLastGitPull : 0;
         long timeSinceLastPull = Math.abs(now - lastGitPull);
-        if (timeSinceLastPull > delayPeriodBetweenPullBaswbrewGit) {
+        if (timeSinceLastPull > delayPeriodBetweenPullDockerFileGit) {
             try {
                 Git.wrap(repository).pull().call();
-                lastDockerFileGitPullDates.put(entry.getImageName(), now);
+                lastDockerFileGitPullDates.put(imageName, now);
             } catch (GitAPIException e) {
                 LOGGER.error("Unable to pull from " + git.getRepository().toString(), e);
             }
         } else if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Last pull on Bashbrew Git done to soon, abort the Git pull.");
+            LOGGER.debug("Last pull on Git repository for image {} done to soon, abort the Git pull.", imageName);
 
         }
     }

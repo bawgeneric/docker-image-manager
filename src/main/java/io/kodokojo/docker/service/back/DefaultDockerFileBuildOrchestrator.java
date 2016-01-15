@@ -103,7 +103,7 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
                     return true;
                 }
             } finally {
-                writeLock.lock();
+                writeLock.unlock();
             }
         } else if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("DockerBuildPlan already exist for image {}.", imageName.getFullyQualifiedName());
