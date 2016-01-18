@@ -26,6 +26,7 @@ import com.tngtech.jgiven.annotation.As;
 import com.tngtech.jgiven.junit.ScenarioTest;
 import io.kodokojo.docker.DockerIsRequire;
 import io.kodokojo.docker.DockerPresentMethodRule;
+import io.kodokojo.docker.bdd.Registry;
 import io.kodokojo.docker.bdd.stage.docker.DockerCommonsGiven;
 import io.kodokojo.docker.bdd.stage.docker.DockerCommonsWhen;
 import io.kodokojo.docker.bdd.stage.docker.DockerRegistryThen;
@@ -42,6 +43,7 @@ public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, Docke
 
     @Test
     @DockerIsRequire
+    @Registry
     public void push_busybox_to_registry_and_get_valid_build_plan() {
 
         DockerRegistryThen<?> dockerRegistryThen = addStage(DockerRegistryThen.class);

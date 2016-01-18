@@ -25,6 +25,7 @@ package io.kodokojo.docker.service.connector.git;
 import io.kodokojo.docker.model.DockerFile;
 import io.kodokojo.docker.model.StringToImageNameConverter;
 import io.kodokojo.docker.service.DefaultDockerFileRepository;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -33,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 
 public class GitBashbrewDockerFileSourceIntTest {
 

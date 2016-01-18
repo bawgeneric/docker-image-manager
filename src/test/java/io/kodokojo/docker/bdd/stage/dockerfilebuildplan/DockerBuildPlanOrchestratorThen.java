@@ -22,8 +22,13 @@ package io.kodokojo.docker.bdd.stage.dockerfilebuildplan;
  * #L%
  */
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.tngtech.jgiven.CurrentStep;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
 import com.tngtech.jgiven.annotation.Quoted;
+import com.tngtech.jgiven.attachment.Attachment;
+import com.tngtech.jgiven.attachment.MediaType;
 import io.kodokojo.docker.bdd.stage.AbstractRestStage;
 import io.kodokojo.docker.bdd.stage.docker.DockerCommonsGiven;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
@@ -42,6 +47,9 @@ public class DockerBuildPlanOrchestratorThen<SELF extends DockerBuildPlanOrchest
     @ExpectedScenarioState
     Map<String, String> containers = new HashMap<>();
 
+    @ExpectedScenarioState
+    CurrentStep currentStep;
+
     public SELF docker_build_plan_orchestrator_contain_a_DockerBuildPlan_for_image_$(@Quoted String imageNameStr) {
         if (isBlank(imageNameStr)) {
             throw new IllegalArgumentException("imageNameStr must be defined.");
@@ -54,6 +62,11 @@ public class DockerBuildPlanOrchestratorThen<SELF extends DockerBuildPlanOrchest
 
         DockerFileBuildPlan dockerFileBuildPlan = restEntryPoint.getDockerFileBuildPlan(imageName.getNamespace(), imageName.getName(), imageName.getTag());
         assertThat(dockerFileBuildPlan).isNotNull();
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        Attachment attachment = Attachment.plainText(gson.toJson(dockerFileBuildPlan)).withTitle("DockerBuildPlan for " +imageName.getFullyQualifiedName()).withFileName("dokcerbuildfile.json");
+        //Attachment attachment = Attachment.json(gson.toJson(dockerFileBuildPlan)).withTitle("DockerBuildPlan for " +imageName.getFullyQualifiedName()).withFileName("dokcerbuildfile.json");
+        currentStep.addAttachment(attachment);
 
         return self();
     }

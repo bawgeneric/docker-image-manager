@@ -44,7 +44,11 @@ public class ImageName {
     private final List<String> tags;
 
     public ImageName(String repository, String namespace, String name, String tag){
-        this.repository = repository;
+        if (StringUtils.isNotBlank(repository)) {
+            this.repository = repository.toLowerCase();
+        } else {
+            this.repository = null;
+        }
         if (StringUtils.isBlank(namespace)) {
             this.namespace = DEFAULT_NAMESPACE;
         } else {
