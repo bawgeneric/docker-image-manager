@@ -1,4 +1,4 @@
-package io.kodokojo.docker.utils.properties.provider;
+package io.kodokojo.docker.utils.properties.provider.kv;
 
 /*
  * #%L
@@ -24,22 +24,15 @@ package io.kodokojo.docker.utils.properties.provider;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
-public class DecoratePropertiesValueProvider extends AbstarctStringPropertyValueProvider {
-
-    private final PropertiesValueProvider propertiesValueProvider;
-
-    public DecoratePropertiesValueProvider(PropertiesValueProvider propertiesValueProvider) {
-        if (propertiesValueProvider == null) {
-            throw new IllegalArgumentException("propertiesValueProvider must be defined.");
-        }
-        this.propertiesValueProvider = propertiesValueProvider;
-    }
-
+public class DotKeyToZookeeperPathConverter implements KeyToZookeeperPathConverter {
     @Override
-    protected String provideValue(String key) {
+    public String convert(String key) {
         if (isBlank(key)) {
             throw new IllegalArgumentException("key must be defined.");
         }
-        return providePropertyValue(String.class, key);
+        if (!key.startsWith("/")) {
+            key = "/" + key;
+        }
+        return key.replaceAll(".","/");
     }
 }
