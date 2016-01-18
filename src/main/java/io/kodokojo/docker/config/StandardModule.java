@@ -41,10 +41,14 @@ import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.connector.git.DockerFileSource;
 import io.kodokojo.docker.service.connector.git.GitBashbrewDockerFileSource;
 import io.kodokojo.docker.utils.properties.PropertyResolver;
-import io.kodokojo.docker.utils.properties.SystemPropertyValueProvider;
+import io.kodokojo.docker.utils.properties.provider.OrderedMergedValueProvider;
+import io.kodokojo.docker.utils.properties.provider.PropertyValueProvider;
+import io.kodokojo.docker.utils.properties.provider.SystemEnvValueProvider;
+import io.kodokojo.docker.utils.properties.provider.SystemPropertyValueProvider;
 
 import javax.inject.Named;
 import java.io.File;
+import java.util.LinkedList;
 
 public class StandardModule extends AbstractModule {
 
@@ -58,7 +62,15 @@ public class StandardModule extends AbstractModule {
     @Provides
     @Singleton
     GitBashbrewConfig provideGitBashbrewConfig() {
-        SystemPropertyValueProvider valueProvider = new SystemPropertyValueProvider();
+        LinkedList<PropertyValueProvider> valueProviders = new LinkedList<>();
+        OrderedMergedValueProvider valueProvider = new OrderedMergedValueProvider(valueProviders);
+
+        SystemPropertyValueProvider systemPropertyValueProvider = new SystemPropertyValueProvider();
+        valueProviders.add(systemPropertyValueProvider);
+
+        SystemEnvValueProvider systemEnvValueProvider = new SystemEnvValueProvider();
+        valueProviders.add(systemEnvValueProvider);
+
         PropertyResolver propertyResolver = new PropertyResolver(valueProvider);
         return propertyResolver.createProxy(GitBashbrewConfig.class);
     }

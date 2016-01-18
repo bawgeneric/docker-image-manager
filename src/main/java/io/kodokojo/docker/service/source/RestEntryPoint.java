@@ -106,7 +106,7 @@ public class RestEntryPoint {
             RestRequest restRequest = new RestRequest(HttpVerbe.POST, header, request.body());
 
             pushEventDispatcher.tell(restRequest, ActorRef.noSender());
-            halt(200);
+            halt(201);
             return null;
         });
 

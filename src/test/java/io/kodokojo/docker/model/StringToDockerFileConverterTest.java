@@ -33,6 +33,8 @@ import static org.junit.Assert.fail;
 
 public class StringToDockerFileConverterTest {
 
+
+    //TODO Test dockerfile From and maintainer with space
     @Test
     public void valid_from_and_maintainer() {
         ImageName imageName = StringToImageNameConverter.convert("kodokojo/testA:dev");
@@ -46,6 +48,19 @@ public class StringToDockerFileConverterTest {
         assertThat(dockerFile.getFrom().getName()).isEqualTo("busybox");
     }
 
+    @Test
+    public void with_multiple_whitespace() {
+        ImageName imageName = StringToImageNameConverter.convert("kodokojo/testB:dev");
+        String content = getDockerfileContent(imageName);
+
+        DockerFile dockerFile = StringToDockerFileConverter.convertToDockerFile(imageName, content);
+
+        assertThat(dockerFile).isNotNull();
+        assertThat(dockerFile.getMaintainer()).isNotNull().isEqualTo("Jean-Pascal THIERY <jpthiery@xebia.fr>");
+        assertThat(dockerFile.getFrom()).isNotNull();
+        assertThat(dockerFile.getFrom().getName()).isEqualTo("busybox");
+
+    }
 
     private String getDockerfileContent(ImageName imageName) {
         assert imageName != null : "ImageName must be defined";

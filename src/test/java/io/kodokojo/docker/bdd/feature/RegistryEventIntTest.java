@@ -48,6 +48,7 @@ public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, Docke
 
         DockerRegistryThen<?> dockerRegistryThen = addStage(DockerRegistryThen.class);
         DockerBuildPlanOrchestratorThen<?> dockerBuildPlanOrchestratorThen = addStage(DockerBuildPlanOrchestratorThen.class);
+
         String parent = "centos:7";
         String image = "busybox:latest";
 

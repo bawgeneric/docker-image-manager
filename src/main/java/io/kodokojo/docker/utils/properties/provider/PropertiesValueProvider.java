@@ -1,4 +1,4 @@
-package io.kodokojo.docker.utils.properties;
+package io.kodokojo.docker.utils.properties.provider;
 
 /*
  * #%L
@@ -22,13 +22,20 @@ package io.kodokojo.docker.utils.properties;
  * #L%
  */
 
-import org.apache.commons.beanutils.converters.StringConverter;
+import java.util.Properties;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
-public abstract class AbstarctStringPropertyValueProvider implements  PropertyValueProvider{
+public class PropertiesValueProvider implements PropertyValueProvider {
 
-    protected abstract String provideValue(String key);
+    private final Properties properties;
+
+    public PropertiesValueProvider(Properties properties) {
+        if (properties == null) {
+            throw new IllegalArgumentException("properties must be defined.");
+        }
+        this.properties = properties;
+    }
 
     @Override
     public <T> T providePropertyValue(Class<T> classType, String key) {
@@ -38,9 +45,10 @@ public abstract class AbstarctStringPropertyValueProvider implements  PropertyVa
         if (isBlank(key)) {
             throw new IllegalArgumentException("key must be defined.");
         }
-        String value = provideValue(key);
-        StringConverter converter = new StringConverter();
-        return converter.convert(classType, value);
+        Object valueObject = properties.get(key);
+        if (valueObject != null && !classType.isAssignableFrom(valueObject.getClass())) {
+            throw new IllegalArgumentException("Property key return value '" + valueObject + "' which type '" + valueObject.getClass().getCanonicalName() + " is not the expected '" + classType.getCanonicalName() + "'.");
+        }
+        return (T) valueObject;
     }
-
 }

@@ -22,6 +22,8 @@ package io.kodokojo.docker.utils.properties;
  * #L%
  */
 
+import io.kodokojo.docker.utils.properties.provider.PropertyValueProvider;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;

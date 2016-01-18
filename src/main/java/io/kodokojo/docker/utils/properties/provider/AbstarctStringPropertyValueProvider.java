@@ -1,4 +1,4 @@
-package io.kodokojo.docker.utils.properties;
+package io.kodokojo.docker.utils.properties.provider;
 
 /*
  * #%L
@@ -22,14 +22,25 @@ package io.kodokojo.docker.utils.properties;
  * #L%
  */
 
+import org.apache.commons.beanutils.converters.StringConverter;
+
 import static org.apache.commons.lang.StringUtils.isBlank;
 
-public class SystemPropertyValueProvider extends AbstarctStringPropertyValueProvider {
+public abstract class AbstarctStringPropertyValueProvider implements PropertyValueProvider {
+
+    protected abstract String provideValue(String key);
+
     @Override
-    protected String provideValue(String key) {
+    public <T> T providePropertyValue(Class<T> classType, String key) {
+        if (classType == null) {
+            throw new IllegalArgumentException("classType must be defined.");
+        }
         if (isBlank(key)) {
             throw new IllegalArgumentException("key must be defined.");
         }
-        return System.getProperty(key);
+        String value = provideValue(key);
+        StringConverter converter = new StringConverter();
+        return converter.convert(classType, value);
     }
+
 }

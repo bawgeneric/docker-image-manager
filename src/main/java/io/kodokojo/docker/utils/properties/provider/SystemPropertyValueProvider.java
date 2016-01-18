@@ -1,4 +1,4 @@
-package io.kodokojo.docker.utils.properties;
+package io.kodokojo.docker.utils.properties.provider;
 
 /*
  * #%L
@@ -22,8 +22,14 @@ package io.kodokojo.docker.utils.properties;
  * #L%
  */
 
-public interface PropertyValueProvider {
+import static org.apache.commons.lang.StringUtils.isBlank;
 
-    <T> T providePropertyValue(Class<T> classType, String key);
-
+public class SystemPropertyValueProvider extends AbstarctStringPropertyValueProvider {
+    @Override
+    protected String provideValue(String key) {
+        if (isBlank(key)) {
+            throw new IllegalArgumentException("key must be defined.");
+        }
+        return System.getProperty(key);
+    }
 }

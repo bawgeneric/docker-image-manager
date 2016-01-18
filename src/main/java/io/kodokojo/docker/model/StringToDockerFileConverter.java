@@ -65,11 +65,11 @@ public class StringToDockerFileConverter  {
             String line = it.next();
             Matcher fromMatcher = FROM_PATTERN.matcher(line);
             if (from == null && fromMatcher.find()) {
-                from = fromMatcher.group(1);
+                from = fromMatcher.group(1).trim();
             } else {
                 Matcher maintainerMatcher = MAINTAINER_PATTERN.matcher(line);
                 if (maintainerMatcher.find()) {
-                    maintainer = maintainerMatcher.group(1);
+                    maintainer = maintainerMatcher.group(1).trim();
                 }
             }
         }

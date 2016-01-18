@@ -25,6 +25,7 @@ package io.kodokojo.docker.model;
 import java.util.HashSet;
 import java.util.Set;
 
+//TODO Remove
 public class DockerFileNode {
 
     private final DockerFile parent;
