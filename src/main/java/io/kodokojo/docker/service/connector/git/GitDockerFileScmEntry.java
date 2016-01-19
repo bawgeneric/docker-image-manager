@@ -23,10 +23,11 @@ package io.kodokojo.docker.service.connector.git;
  */
 
 import io.kodokojo.docker.model.ImageName;
+import io.kodokojo.docker.model.DockerFileScmEntry;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
-public class DockerFileEntry {
+public class GitDockerFileScmEntry implements DockerFileScmEntry {
 
     private final ImageName imageName;
 
@@ -36,7 +37,7 @@ public class DockerFileEntry {
 
     private final String dockerFilePath;
 
-    protected DockerFileEntry(ImageName imageName, String gitUrl, String gitRef, String dockerFilePath) {
+    public GitDockerFileScmEntry(ImageName imageName, String gitUrl, String gitRef, String dockerFilePath) {
         if (imageName == null) {
             throw new IllegalArgumentException("imageName must be defined.");
         }
@@ -56,6 +57,16 @@ public class DockerFileEntry {
         this.dockerFilePath = dockerFilePath;
     }
 
+    @Override
+    public String getScmUrl() {
+        return getGitUrl();
+    }
+
+    @Override
+    public String getRef() {
+        return getGitRef();
+    }
+
     public ImageName getImageName() {
         return imageName;
     }
@@ -68,13 +79,14 @@ public class DockerFileEntry {
         return gitRef;
     }
 
+    @Override
     public String getDockerFilePath() {
         return dockerFilePath;
     }
 
     @Override
     public String toString() {
-        return "DockerFileEntry{" +
+        return "GitDockerFileScmEntry{" +
                 "imageName='" + imageName + '\'' +
                 ", gitUrl='" + gitUrl + '\'' +
                 ", gitRef='" + gitRef + '\'' +

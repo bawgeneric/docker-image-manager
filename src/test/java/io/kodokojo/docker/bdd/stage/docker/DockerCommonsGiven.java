@@ -103,7 +103,7 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
                 .withPortBindings(portBinding)
                 .withExposedPorts(exposedPort)
                 .withWorkingDir("/project")
-                .withCmd("java", "-Dlogback.configurationFile=\"/project/int-logback-config.xml\"","-Dgit.bashbrew.url=git://github.com/kodokojo/acme" , "-Dgit.bashbrew.library.path=bashbrew/library", "-jar", "/project/app.jar")
+                .withCmd("java", "-Dlogback.configurationFile=/project/int-logback-config.xml","-Dgit.bashbrew.url=git://github.com/kodokojo/acme" , "-Dgit.bashbrew.library.path=bashbrew/library", "-jar", "/project/app.jar")
                 .exec();
 
         this.containerId = containerResponseId.getId();

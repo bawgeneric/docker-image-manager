@@ -1,4 +1,4 @@
-package io.kodokojo.docker.service.connector.git;
+package io.kodokojo.docker.service.back.build;
 
 /*
  * #%L
@@ -22,12 +22,23 @@ package io.kodokojo.docker.service.connector.git;
  * #L%
  */
 
+import io.kodokojo.docker.model.Image;
 import io.kodokojo.docker.model.ImageName;
 
-public interface DockerFileSource {
+import java.util.Date;
 
-    void fetchAllDockerFile();
+public interface DockerImageBuildCallback {
 
-    boolean fetchDockerFile(ImageName imageName);
+    void fromImagePulled(ImageName imageName);
+
+    void buildBegin(Date beginDate);
+
+    void buildSuccess(Date endDate);
+
+    void pushToRepositoryBegin(String repository, Date begin);
+
+    void pushToRepositoryEnd(String repository, Date begin);
+
+    void buildFailed(String reason, Date failDate);
 
 }

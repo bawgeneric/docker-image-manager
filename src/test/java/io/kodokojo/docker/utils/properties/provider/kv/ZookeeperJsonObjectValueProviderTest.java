@@ -24,10 +24,8 @@ package io.kodokojo.docker.utils.properties.provider.kv;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.kodokojo.docker.model.DockerFile;
-import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.docker.model.ImageName;
-import io.kodokojo.docker.model.StringToImageNameConverter;
+import io.kodokojo.docker.model.*;
+import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -76,8 +74,12 @@ public class ZookeeperJsonObjectValueProviderTest {
             exists = zooKeeper.exists("/maconfig/keyA", false);
             Set<DockerFileBuildPlan> children = new HashSet<>();
             DockerFile dockerFile = new DockerFile(imageName);
-            DockerFileBuildPlan dockerFileBuildPlan = new DockerFileBuildPlan(dockerFile,children, new Date());
+            GitDockerFileScmEntry dockerFileScmEntry = new GitDockerFileScmEntry(imageName,"git://github.com/kodokojo/acme", "HEAD", "dockerfiles/busybox");
+
+            DockerFileBuildPlan<GitDockerFileScmEntry> dockerFileBuildPlan = new DockerFileBuildPlan<>(dockerFile,children, dockerFileScmEntry,new Date());
+            //Gson gson = new GsonBuilder().registerTypeAdapter(GitDockerFileScmEntry.class, new GsonInterfaceAdapter<GitDockerFileScmEntry>()).create();
             Gson gson = new GsonBuilder().create();
+            LOGGER.debug("Add follonwing data in Zookeeper node '/maconfig/keyA':\n{}",gson.toJson(dockerFileBuildPlan) );
             String data = gson.toJson(dockerFileBuildPlan);
             zooKeeper.setData("/maconfig/keyA", data.getBytes(), exists.getVersion());
         } catch (KeeperException | InterruptedException e) {
@@ -85,7 +87,7 @@ public class ZookeeperJsonObjectValueProviderTest {
         }
 
         ZookeeperJsonObjectValueProvider zookeeperJsonObjectValueProvider = new ZookeeperJsonObjectValueProvider(zookeeperResources.getZkUrl(), null);
-        DockerFileBuildPlan dockerFileBuildPlan = zookeeperJsonObjectValueProvider.providePropertyValue(DockerFileBuildPlan.class, "/maconfig/keyA");
+        DockerFileBuildPlan<GitDockerFileScmEntry> dockerFileBuildPlan = zookeeperJsonObjectValueProvider.providePropertyValue(DockerFileBuildPlan.class, "/maconfig/keyA");
 
         assertThat(dockerFileBuildPlan).isNotNull();
         assertThat(dockerFileBuildPlan.getDockerFile().getImageName()).isEqualTo(imageName);

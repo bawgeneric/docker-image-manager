@@ -22,10 +22,7 @@ package io.kodokojo.docker.utils.properties.provider.kv;
  * #L%
  */
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import io.kodokojo.docker.utils.properties.provider.AbstarctStringPropertyValueProvider;
 import retrofit.RestAdapter;
 import retrofit.RetrofitError;
@@ -37,11 +34,12 @@ import java.util.Base64;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
-public class ConsultKvPropertyValueProvider extends AbstarctStringPropertyValueProvider {
+//  TODO Add tests
+public class ConsulKvPropertyValueProvider extends AbstarctStringPropertyValueProvider {
 
     private final ConsulKvRest consulKvRest;
 
-    public ConsultKvPropertyValueProvider(String baseUrl) {
+    public ConsulKvPropertyValueProvider(String baseUrl) {
         if (isBlank(baseUrl)) {
             throw new IllegalArgumentException("baseUrl must be defined.");
         }
@@ -61,8 +59,11 @@ public class ConsultKvPropertyValueProvider extends AbstarctStringPropertyValueP
 
             String res = null;
             if (json != null) {
-                String value = json.getAsJsonPrimitive("Value").getAsString();
-                res = new String(Base64.getDecoder().decode(value));
+                JsonPrimitive primitive = json.getAsJsonPrimitive("Value");
+                if (primitive != null) {
+                    String value = primitive.getAsString();
+                    res = new String(Base64.getDecoder().decode(value));
+                }
             }
             return res;
         } catch (RetrofitError e) {

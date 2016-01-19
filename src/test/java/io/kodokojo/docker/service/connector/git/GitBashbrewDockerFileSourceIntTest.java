@@ -25,6 +25,7 @@ package io.kodokojo.docker.service.connector.git;
 import io.kodokojo.docker.model.DockerFile;
 import io.kodokojo.docker.model.StringToImageNameConverter;
 import io.kodokojo.docker.service.DefaultDockerFileRepository;
+import io.kodokojo.docker.service.connector.DockerFileSource;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,7 +49,8 @@ public class GitBashbrewDockerFileSourceIntTest {
         String libraryPath = "bashbrew/library";
         File workspace = tmpFolder.newFolder();
         DefaultDockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
-        DockerFileSource dockerFileSource = new GitBashbrewDockerFileSource(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
+        GitDockerFileProjectFetcher gitDockerFileProjectFetcher = new GitDockerFileProjectFetcher(workspace.getAbsolutePath());
+        DockerFileSource dockerFileSource = new GitBashbrewDockerFileSource(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository, gitDockerFileProjectFetcher);
 
         dockerFileSource.fetchDockerFile(StringToImageNameConverter.convert("kodokojo/busybox"));
 
@@ -62,7 +64,8 @@ public class GitBashbrewDockerFileSourceIntTest {
         String libraryPath = "bashbrew/library";
         File workspace = tmpFolder.newFolder();
         DefaultDockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
-        DockerFileSource dockerFileSource = new GitBashbrewDockerFileSource(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
+        GitDockerFileProjectFetcher gitDockerFileProjectFetcher = new GitDockerFileProjectFetcher(workspace.getAbsolutePath());
+        DockerFileSource dockerFileSource = new GitBashbrewDockerFileSource(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository, gitDockerFileProjectFetcher);
 
         dockerFileSource.fetchDockerFile(StringToImageNameConverter.convert("kodokojo/busybox:1.0.0"));
 
@@ -77,7 +80,8 @@ public class GitBashbrewDockerFileSourceIntTest {
 
         File workspace = tmpFolder.newFolder();
         DefaultDockerFileRepository dockerFileRepository = new DefaultDockerFileRepository();
-        DockerFileSource dockerFileSource = new GitBashbrewDockerFileSource(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository);
+        GitDockerFileProjectFetcher gitDockerFileProjectFetcher = new GitDockerFileProjectFetcher(workspace.getAbsolutePath());
+        DockerFileSource dockerFileSource = new GitBashbrewDockerFileSource(workspace.getAbsolutePath(), null, gitUrl, libraryPath, dockerFileRepository, gitDockerFileProjectFetcher);
 
         dockerFileSource.fetchAllDockerFile();
 

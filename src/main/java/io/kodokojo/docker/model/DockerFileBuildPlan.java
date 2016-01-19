@@ -22,15 +22,20 @@ package io.kodokojo.docker.model;
  * #L%
  */
 
+
+import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
+
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-public class DockerFileBuildPlan {
+public class DockerFileBuildPlan<T extends DockerFileScmEntry> {
 
     private final DockerFile dockerFile;
 
     private final Set<DockerFileBuildPlan> children;
+
+    private final GitDockerFileScmEntry dockerFileScmEntry;
 
     private Date launchBuildDate;
 
@@ -38,12 +43,15 @@ public class DockerFileBuildPlan {
 
     private Date lastUpdateDate;
 
-    public DockerFileBuildPlan(DockerFile dockerFile, Set<DockerFileBuildPlan> children, Date lastUpdateDate) {
+    public DockerFileBuildPlan(DockerFile dockerFile, Set<DockerFileBuildPlan> children,GitDockerFileScmEntry dockerFileScmEntry, Date lastUpdateDate) {
         if (dockerFile == null) {
             throw new IllegalArgumentException("dockerFile must be defined.");
         }
         if (children == null) {
             throw new IllegalArgumentException("children must be defined.");
+        }
+        if (dockerFileScmEntry == null) {
+            throw new IllegalArgumentException("dockerFileScmEntry must be defined.");
         }
         if (lastUpdateDate == null) {
             throw new IllegalArgumentException("lastUpdateDate must be defined.");
@@ -51,6 +59,7 @@ public class DockerFileBuildPlan {
 
         this.dockerFile = dockerFile;
         this.children = children;
+        this.dockerFileScmEntry =  dockerFileScmEntry;
         this.lastUpdateDate = null;
         this.buildDate = null;
         this.lastUpdateDate = lastUpdateDate;
@@ -86,6 +95,10 @@ public class DockerFileBuildPlan {
         return dockerFile;
     }
 
+    public GitDockerFileScmEntry getDockerFileScmEntry() {
+        return dockerFileScmEntry;
+    }
+
     public Set<DockerFileBuildPlan> getChildren() {
         return new HashSet<>(children);
     }
@@ -111,6 +124,7 @@ public class DockerFileBuildPlan {
         return "DockerFileBuildPlan{" +
                 "dockerFile=" + dockerFile +
                 ", children=" + children +
+                ", dockerFileScmEntry=" + dockerFileScmEntry +
                 ", launchBuildDate=" + launchBuildDate +
                 ", buildDate=" + buildDate +
                 ", lastUpdateDate=" + lastUpdateDate +

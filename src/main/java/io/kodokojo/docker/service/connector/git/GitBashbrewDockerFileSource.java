@@ -25,8 +25,9 @@ package io.kodokojo.docker.service.connector.git;
 import io.kodokojo.docker.model.DockerFile;
 import io.kodokojo.docker.model.ImageName;
 import io.kodokojo.docker.model.ImageNameBuilder;
-import io.kodokojo.docker.model.StringToDockerFileConverter;
 import io.kodokojo.docker.service.DockerFileRepository;
+import io.kodokojo.docker.model.DockerFileScmEntry;
+import io.kodokojo.docker.service.connector.DockerFileSource;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -35,16 +36,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevTree;
-import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.treewalk.TreeWalk;
-import org.eclipse.jgit.treewalk.filter.AndTreeFilter;
-import org.eclipse.jgit.treewalk.filter.PathFilter;
-import org.eclipse.jgit.treewalk.filter.TreeFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,19 +47,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
-//  TODO May need to be split to improve readability
-public class GitBashbrewDockerFileSource implements DockerFileSource {
+//  TODO May need to be split to improve readability, better management of MultiThreading...
+public class GitBashbrewDockerFileSource implements DockerFileSource<GitDockerFileScmEntry> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GitBashbrewDockerFileSource.class);
 
     private static final Pattern LIBRARY_CONTENT_PATTERN = Pattern.compile("^([^ #]*): ([^ @]*)@([^ ]*) ([^ ]*)$");
-
-    private static final String DOCKERFILE_GIT_DIRECTORY = "dockerfile/";
 
     private static final String BASHBREW_GIT_DIRECTORY = "bashbrew/";
 
@@ -75,7 +66,6 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
 
     private static final long DEFAULT_BASHBREW_PULL_DELAY = TimeUnit.MILLISECONDS.convert(1,TimeUnit.MINUTES);
 
-    private static final long DEFAULT_DOCKERFILE_GIT_PULL_DELAY = TimeUnit.MILLISECONDS.convert(5,TimeUnit.MINUTES);
 
     private final File libraryDirectory;
 
@@ -83,30 +73,38 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
 
     private final DockerFileRepository dockerFileRepository;
 
-    private final String defaultUser;
+    private final GitDockerFileProjectFetcher gitDockerFileProjectFetcher;
 
-    private final File dockerfileGitDir;
+    private final String defaultUser;
 
     private final long delayPeriodBetweenPullBaswbrewGit;
 
-    private final long delayPeriodBetweenPullDockerFileGit;
+    private final Map<ImageName, GitDockerFileScmEntry> dockerFileScmEntrys;
 
-    private final Map<ImageName, Long> lastDockerFileGitPullDates;
+    private final ReentrantReadWriteLock.WriteLock writeLock;
+
+    private final ReentrantReadWriteLock.ReadLock readLock;
 
     private long lastBashbrewPullDate = 0;
 
-    public GitBashbrewDockerFileSource(String localWorkspace, String defaultUser, String bashbrewGitUrl, String bashbrewGitLibraryPath, DockerFileRepository dockerFileRepository, long delayPeriodBetweenPullBaswbrewGit, long delayPeriodBetweenPullDockerFileGit) {
+    public GitBashbrewDockerFileSource(String localWorkspace, String defaultUser, String bashbrewGitUrl, String bashbrewGitLibraryPath, DockerFileRepository dockerFileRepository, GitDockerFileProjectFetcher gitDockerFileProjectFetcher,long delayPeriodBetweenPullBaswbrewGit) {
+        this.gitDockerFileProjectFetcher = gitDockerFileProjectFetcher;
         if (isBlank(localWorkspace)) {
             throw new IllegalArgumentException("localWorkspace must be defined.");
         }
         if (dockerFileRepository == null) {
             throw new IllegalArgumentException("dockerFileRepository must be defined.");
         }
+        if (gitDockerFileProjectFetcher == null) {
+            throw new IllegalArgumentException("gitDockerFileProjectFetcher must be defined.");
+        }
         this.dockerFileRepository = dockerFileRepository;
         this.defaultUser = defaultUser;
         this.delayPeriodBetweenPullBaswbrewGit = delayPeriodBetweenPullBaswbrewGit;
-        this.delayPeriodBetweenPullDockerFileGit = delayPeriodBetweenPullDockerFileGit;
-        this.lastDockerFileGitPullDates = new HashMap<>();
+        this.dockerFileScmEntrys = new HashMap<>();
+        ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+        this.writeLock = lock.writeLock();
+        this.readLock = lock.readLock();
 
         File workspace = new File(localWorkspace);
         if (!workspace.exists()) {
@@ -121,8 +119,6 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
             throw new IllegalArgumentException("bashbrewGitUrl must be defined.");
         }
 
-        dockerfileGitDir = new File(workspace.getAbsolutePath() + File.separator + DOCKERFILE_GIT_DIRECTORY);
-        dockerfileGitDir.mkdirs();
 
         File bashbrewGitDir = new File(workspace.getAbsolutePath() + File.separator + BASHBREW_GIT_DIRECTORY);
         String gitPath = bashbrewGitDir.getAbsolutePath() + File.separator + GIT_DIRECTORY;
@@ -152,8 +148,21 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
         libraryDirectory = new File(bashbrewGitDir + File.separator + bashbrewGitLibraryPath);
     }
 
-    public GitBashbrewDockerFileSource(String localWorkspace, String defaultUser, String bashbrewGitUrl, String bashbrewGitLibraryPath, DockerFileRepository dockerFileRepository) {
-        this(localWorkspace, defaultUser, bashbrewGitUrl, bashbrewGitLibraryPath, dockerFileRepository, DEFAULT_BASHBREW_PULL_DELAY, DEFAULT_DOCKERFILE_GIT_PULL_DELAY);
+    public GitBashbrewDockerFileSource(String localWorkspace, String defaultUser, String bashbrewGitUrl, String bashbrewGitLibraryPath, DockerFileRepository dockerFileRepository,GitDockerFileProjectFetcher gitDockerFileProjectFetcher) {
+        this(localWorkspace, defaultUser, bashbrewGitUrl, bashbrewGitLibraryPath, dockerFileRepository,gitDockerFileProjectFetcher,  DEFAULT_BASHBREW_PULL_DELAY);
+    }
+
+    @Override
+    public GitDockerFileScmEntry getDockerFileScmEntry(ImageName imageName) {
+        if (imageName == null) {
+            throw new IllegalArgumentException("imageName must be defined.");
+        }
+        readLock.lock();
+        try {
+            return dockerFileScmEntrys.get(imageName);
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
@@ -165,7 +174,7 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
 
         pullBashbrewRepository();
 
-        List<DockerFileEntry> dockerFileEntries = new ArrayList<>();
+        List<GitDockerFileScmEntry> dockerFileEntries = new ArrayList<>();
 
         FileUtils.listFilesAndDirs(libraryDirectory, DirectoryFileFilter.DIRECTORY, TrueFileFilter.INSTANCE).forEach(namespace -> {
             FileUtils.listFiles(namespace, TrueFileFilter.TRUE, null).forEach(name -> {
@@ -185,14 +194,21 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
 
     }
 
-    private void addDockerFilesToDockerFileRepository(List<DockerFileEntry> dockerFileEntries) {
-        for (DockerFileEntry entry : dockerFileEntries) {
-            DockerFile dockerFile = fetchDockerFileFromGitRepository(entry);
+    private void addDockerFilesToDockerFileRepository(List<GitDockerFileScmEntry> dockerFileEntries) {
+        for (GitDockerFileScmEntry entry : dockerFileEntries) {
+
+            DockerFile dockerFile = gitDockerFileProjectFetcher.fetchDockerFileScmEntry(entry);
             if (dockerFile != null) {
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace("Create dockerfile {}", dockerFile);
                 }
                 dockerFileRepository.addDockerFile(dockerFile);
+                writeLock.lock();
+                try {
+                    dockerFileScmEntrys.put(entry.getImageName(), entry);
+                } finally {
+                    writeLock.unlock();
+                }
             }
         }
     }
@@ -219,7 +235,7 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
             ImageNameBuilder imageNameBuilder = new ImageNameBuilder();
             imageNameBuilder.setNamespace(imageName.getNamespace());
             imageNameBuilder.setName(imageName.getName());
-            List<DockerFileEntry> dockerFileEntries = convertBashbrewFileToDockerfileEntries(libraryFileContent, StringUtils.isBlank(imageName.getTag()) ? null : imageName.getTag(), imageNameBuilder);
+            List<GitDockerFileScmEntry> dockerFileEntries = convertBashbrewFileToDockerfileEntries(libraryFileContent, StringUtils.isBlank(imageName.getTag()) ? null : imageName.getTag(), imageNameBuilder);
             addDockerFilesToDockerFileRepository(dockerFileEntries);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("DockerFile {} successfully fetched : {}", imageName.getFullyQualifiedName() ,dockerFileEntries.toString());
@@ -231,9 +247,9 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
         }
     }
 
-    private List<DockerFileEntry> convertBashbrewFileToDockerfileEntries(String libraryFileContent, String tag, ImageNameBuilder imageNameBuilder) {
+    private List<GitDockerFileScmEntry> convertBashbrewFileToDockerfileEntries(String libraryFileContent, String tag, ImageNameBuilder imageNameBuilder) {
         assert StringUtils.isNotBlank(libraryFileContent) : "libraryFileContent must be define.";
-        List<DockerFileEntry> res = new ArrayList<>();
+        List<GitDockerFileScmEntry> res = new ArrayList<>();
 
         String[] lines = libraryFileContent.split("\n");
         for (String line : lines) {
@@ -248,7 +264,7 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
                     if (StringUtils.isNotBlank(defaultUser) && !gitUrl.contains("@")) {
                         gitUrl = defaultUser + "@" + gitUrl;
                     }
-                    DockerFileEntry entry = new DockerFileEntry(imageName, gitUrl, matcher.group(3), matcher.group(4));
+                    GitDockerFileScmEntry entry = new GitDockerFileScmEntry(imageName, gitUrl, matcher.group(3), matcher.group(4));
                     res.add(entry);
                 }
             }
@@ -257,110 +273,6 @@ public class GitBashbrewDockerFileSource implements DockerFileSource {
         return res;
     }
 
-    private DockerFile fetchDockerFileFromGitRepository(DockerFileEntry entry) {
-        assert entry != null : "entry must be defined";
-
-        ImageName imageName = entry.getImageName();
-        String pathname = dockerfileGitDir.getAbsolutePath() + File.separator + imageName.getNamespace() + File.separator + imageName.getName();
-        File currentDir = new File(pathname);
-        Repository repository = null;
-
-        if (!currentDir.exists()) {
-            currentDir.mkdirs();
-
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Clone {} in directory {}", entry.getGitUrl(), currentDir.getAbsolutePath());
-            }
-            try {
-                Git git = Git.cloneRepository().setURI(entry.getGitUrl()).setDirectory(currentDir).call();
-                repository = git.getRepository();
-            } catch (GitAPIException e) {
-                LOGGER.error("Unable to clone repository " + entry.getGitUrl(), e);
-                return null;
-            }
-        } else {
-            String gitPath = currentDir.getAbsolutePath() + File.separator + GIT_DIRECTORY;
-            File gitDir = new File(gitPath);
-            try {
-                repository = new FileRepository(gitDir);
-            } catch (IOException e) {
-                LOGGER.error("Not able to plug already existing repot " + gitDir.getAbsolutePath(), e);
-                return null;
-            }
-        }
-        DockerFile dockerFile = null;
-
-        String fileContent = getFileContent(repository, entry);
-        if (StringUtils.isNotBlank(fileContent)) {
-            dockerFile = StringToDockerFileConverter.convertToDockerFile(entry.getImageName(), fileContent);
-        }
-        repository.close();
-        return dockerFile;
-
-    }
-
-    //Source : https://github.com/centic9/jgit-cookbook/blob/master/src/main/java/org/dstadler/jgit/api/ReadFileFromCommit.java
-    private String getFileContent(Repository repository, DockerFileEntry entry) {
-        pullDockerFileRepository(repository, entry);
-        String res = null;
-        try (RevWalk revWalk = new RevWalk(repository)) {
-            ObjectId lastCommitId = repository.resolve(entry.getGitRef());
-            RevCommit commit = revWalk.parseCommit(lastCommitId);
-            RevTree tree = commit.getTree();
-
-            try (TreeWalk treeWalk = new TreeWalk(repository)) {
-                treeWalk.addTree(tree);
-                treeWalk.setRecursive(true);
-                String path = entry.getDockerFilePath() + File.separator + "Dockerfile";
-                path = path.startsWith("./") ? path.substring(2) : path;
-
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Looking for file {}", path);
-                }
-
-                treeWalk.setFilter(AndTreeFilter.create(PathFilter.create(path), TreeFilter.ANY_DIFF));
-                if (!treeWalk.next()) {
-                    LOGGER.error("Unable to find Dockerfile for image {}", entry.getImageName().getFullyQualifiedName());
-                    return null;
-                }
-
-                ObjectId objectId = treeWalk.getObjectId(0);
-                ObjectLoader loader = repository.open(objectId);
-                res = new String(loader.getBytes());
-
-            }
-
-            revWalk.dispose();
-        } catch (IOException e) {
-            LOGGER.error("An error occur while trying to retrieve Dockerfile content for image " + entry.getImageName().getFullyQualifiedName(), e);
-            return null;
-        }
-
-        return res;
-    }
-
-    private void pullDockerFileRepository(Repository repository, DockerFileEntry entry) {
-        assert repository != null : "repository must be defined";
-        assert entry != null : "entry must be defined";
-
-        long now = System.currentTimeMillis();
-
-        ImageName imageName = entry.getImageName();
-        Long tmpLastGitPull = lastDockerFileGitPullDates.get(imageName);
-        long lastGitPull = tmpLastGitPull != null ? tmpLastGitPull : 0;
-        long timeSinceLastPull = Math.abs(now - lastGitPull);
-        if (timeSinceLastPull > delayPeriodBetweenPullDockerFileGit) {
-            try {
-                Git.wrap(repository).pull().call();
-                lastDockerFileGitPullDates.put(imageName, now);
-            } catch (GitAPIException e) {
-                LOGGER.error("Unable to pull from " + git.getRepository().toString(), e);
-            }
-        } else if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Last pull on Git repository for image {} done to soon, abort the Git pull.", imageName);
-
-        }
-    }
 
 
     private void pullBashbrewRepository() {

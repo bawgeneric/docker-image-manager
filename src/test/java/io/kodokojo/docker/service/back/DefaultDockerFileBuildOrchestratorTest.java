@@ -28,7 +28,8 @@ import io.kodokojo.docker.model.RegistryEvent;
 import io.kodokojo.docker.model.StringToImageNameConverter;
 import io.kodokojo.docker.service.DefaultDockerFileRepository;
 import io.kodokojo.docker.service.DockerFileRepository;
-import io.kodokojo.docker.service.connector.git.DockerFileSource;
+import io.kodokojo.docker.service.connector.DockerFileSource;
+import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -44,7 +45,7 @@ public class DefaultDockerFileBuildOrchestratorTest {
 
     private DockerFileBuildOrchestrator orchestrator;
 
-    private DockerFileSource dockerFileSourceMock;
+    private DockerFileSource<GitDockerFileScmEntry> dockerFileSourceMock;
 
     @Before
     public void setup() {

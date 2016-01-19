@@ -38,8 +38,10 @@ import io.kodokojo.docker.service.actor.PushEventDispatcher;
 import io.kodokojo.docker.service.actor.RegistryRequestWorker;
 import io.kodokojo.docker.service.back.DefaultDockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
-import io.kodokojo.docker.service.connector.git.DockerFileSource;
+import io.kodokojo.docker.service.connector.DockerFileSource;
 import io.kodokojo.docker.service.connector.git.GitBashbrewDockerFileSource;
+import io.kodokojo.docker.service.connector.git.GitDockerFileProjectFetcher;
+import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
 import io.kodokojo.docker.utils.properties.PropertyResolver;
 import io.kodokojo.docker.utils.properties.provider.OrderedMergedValueProvider;
 import io.kodokojo.docker.utils.properties.provider.PropertyValueProvider;
@@ -77,10 +79,18 @@ public class StandardModule extends AbstractModule {
 
     @Provides
     @Singleton
-    DockerFileSource provideDockerFileSource(DockerFileRepository dockerFileRepository, GitBashbrewConfig gitBashbrewConfig) {
+    DockerFileSource provideDockerFileSource(DockerFileRepository dockerFileRepository, GitDockerFileProjectFetcher gitDockerFileProjectFetcher, GitBashbrewConfig gitBashbrewConfig) {
         File baseDire = new File("");
         String workspace = baseDire.getAbsolutePath() + File.separator + "workspace";
-        return new GitBashbrewDockerFileSource(workspace, null, gitBashbrewConfig.bashbrewGitUrl(), gitBashbrewConfig.bashbrewLibraryPath(), dockerFileRepository);
+        return new GitBashbrewDockerFileSource(workspace, null, gitBashbrewConfig.bashbrewGitUrl(), gitBashbrewConfig.bashbrewLibraryPath(), dockerFileRepository, gitDockerFileProjectFetcher);
+    }
+
+    @Provides
+    @Singleton
+    GitDockerFileProjectFetcher provideGitDockerFileProjectFetcher(GitBashbrewConfig gitBashbrewConfig) {
+        File baseDire = new File("");
+        String workspace = baseDire.getAbsolutePath() + File.separator + "workspace" +File.separator + "dockerfileProjects";
+        return new GitDockerFileProjectFetcher(workspace);
     }
 
     @Provides

@@ -27,7 +27,8 @@ import io.kodokojo.docker.model.DockerFileBuildPlan;
 import io.kodokojo.docker.model.ImageName;
 import io.kodokojo.docker.model.RegistryEvent;
 import io.kodokojo.docker.service.DockerFileRepository;
-import io.kodokojo.docker.service.connector.git.DockerFileSource;
+import io.kodokojo.docker.service.connector.DockerFileSource;
+import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,11 +38,11 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
-public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrchestrator{
+public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrchestrator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultDockerFileBuildOrchestrator.class);
 
-    private final DockerFileSource dockerFileSource;
+    private final DockerFileSource<GitDockerFileScmEntry> dockerFileSource;
 
     private final DockerFileRepository dockerFileRepository;
 
@@ -52,7 +53,7 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
     private final ReentrantReadWriteLock.ReadLock readLock;
 
     @Inject
-    public DefaultDockerFileBuildOrchestrator(DockerFileRepository dockerFileRepository, DockerFileSource dockerFileSource) {
+    public DefaultDockerFileBuildOrchestrator(DockerFileRepository dockerFileRepository, DockerFileSource<GitDockerFileScmEntry> dockerFileSource) {
         if (dockerFileRepository == null) {
             throw new IllegalArgumentException("dockerFileRepository must be defined.");
         }
@@ -145,7 +146,8 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
         if (CollectionUtils.isNotEmpty(dockerFileChildOf)) {
             children.addAll(dockerFileChildOf.stream().map(dockerFileChild -> create(dockerFileChild, timestamp)).collect(Collectors.toList()));
         }
-        DockerFileBuildPlan res = new DockerFileBuildPlan(current, children, timestamp);
+        GitDockerFileScmEntry dockerFileScmEntry = dockerFileSource.getDockerFileScmEntry(current.getImageName());
+        DockerFileBuildPlan<GitDockerFileScmEntry> res = new DockerFileBuildPlan<>(current, children, dockerFileScmEntry, timestamp);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Create following DockerBuildPlan for image {} : {}", current.getImageName().getFullyQualifiedName(), res);
         }

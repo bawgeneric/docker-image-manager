@@ -142,6 +142,15 @@ public class ImageName {
         return sb.toString();
     }
 
+    public String getDockerImageName() {
+        StringBuilder sb = new StringBuilder();
+        if (StringUtils.isNotBlank(repository)) {
+            sb.append(repository).append("/");
+        }
+        sb.append(getShortName());
+        return sb.toString();
+    }
+
     public String getRepository() {
         return repository;
     }

@@ -46,9 +46,10 @@ public class ZookeeperJsonObjectValueProvider implements PropertyValueProvider, 
 
     private final String zookeeperUrl;
 
-    private final ThreadLocal<Gson> gsonThreadLocal = new ThreadLocal<Gson>(){
+    private final ThreadLocal<Gson> gsonThreadLocal = new ThreadLocal<Gson>() {
         @Override
         protected Gson initialValue() {
+            //return new GsonBuilder().registerTypeAdapter(GitDockerFileScmEntry.class, new GsonInterfaceAdapter<GitDockerFileScmEntry>()).create();
             return new GsonBuilder().create();
         }
     };
@@ -66,6 +67,7 @@ public class ZookeeperJsonObjectValueProvider implements PropertyValueProvider, 
         }
         this.keyToZookeeperPathConverter = keyToZookeeperPathConverter;
     }
+
     @Override
     public <T> T providePropertyValue(Class<T> classType, String key) {
         if (classType == null) {
@@ -74,7 +76,7 @@ public class ZookeeperJsonObjectValueProvider implements PropertyValueProvider, 
         if (isBlank(key)) {
             throw new IllegalArgumentException("key must be defined.");
         }
-        if( keyToZookeeperPathConverter != null) {
+        if (keyToZookeeperPathConverter != null) {
             key = keyToZookeeperPathConverter.convert(key);
         }
 
@@ -82,7 +84,8 @@ public class ZookeeperJsonObjectValueProvider implements PropertyValueProvider, 
             Stat exists = client.exists(key, false);
             if (exists != null) {
                 byte[] data = client.getData(key, false, exists);
-                String json =  new String(data);
+                String json = new String(data);
+                LOGGER.debug("Retrive following content from Zookeeper node {}:\n{}", key, json);
                 return gsonThreadLocal.get().fromJson(json, classType);
             } else if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Path " + key + " not exist.");
@@ -90,7 +93,6 @@ public class ZookeeperJsonObjectValueProvider implements PropertyValueProvider, 
         } catch (KeeperException | InterruptedException e) {
             LOGGER.error("Unable to request Zookeeper instance url " + zookeeperUrl, e);
         }
-
 
 
         return null;
