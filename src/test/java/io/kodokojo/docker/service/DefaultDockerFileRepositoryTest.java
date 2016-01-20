@@ -27,6 +27,8 @@ import io.kodokojo.docker.model.ImageName;
 import io.kodokojo.docker.model.StringToImageNameConverter;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -34,6 +36,8 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class DefaultDockerFileRepositoryTest {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultDockerFileRepositoryTest.class);
 
     @Test
     public void add_root_dockerfile() {
@@ -81,6 +85,7 @@ public class DefaultDockerFileRepositoryTest {
         repository.addDockerFile(parentDockerFile);
 
         Set<DockerFile> dockerFileChildOf = repository.getDockerFileChildOf(parentDockerFile);
+
         assertThat(dockerFileChildOf).isNotEmpty()
                 .extracting("imageName.name")
                 .contains("child");

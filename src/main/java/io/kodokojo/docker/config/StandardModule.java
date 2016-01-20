@@ -25,6 +25,9 @@ package io.kodokojo.docker.config;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.core.DockerClientConfig;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -32,27 +35,34 @@ import io.kodokojo.docker.service.DefaultDockerFileRepository;
 import io.kodokojo.docker.service.DefaultDockerImageRepository;
 import io.kodokojo.docker.service.DockerFileRepository;
 import io.kodokojo.docker.service.DockerImageRepository;
-import io.kodokojo.docker.service.actor.DependencyDockerfileUpdateDispatcher;
-import io.kodokojo.docker.service.actor.PushEventChecker;
-import io.kodokojo.docker.service.actor.PushEventDispatcher;
-import io.kodokojo.docker.service.actor.RegistryRequestWorker;
+import io.kodokojo.docker.service.actor.*;
 import io.kodokojo.docker.service.back.DefaultDockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
+import io.kodokojo.docker.service.back.build.DockerClientDockerImageBuilder;
+import io.kodokojo.docker.service.back.build.DockerImageBuilder;
+import io.kodokojo.docker.service.connector.DockerFileProjectFetcher;
 import io.kodokojo.docker.service.connector.DockerFileSource;
 import io.kodokojo.docker.service.connector.git.GitBashbrewDockerFileSource;
 import io.kodokojo.docker.service.connector.git.GitDockerFileProjectFetcher;
 import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
 import io.kodokojo.docker.utils.properties.PropertyResolver;
-import io.kodokojo.docker.utils.properties.provider.OrderedMergedValueProvider;
-import io.kodokojo.docker.utils.properties.provider.PropertyValueProvider;
-import io.kodokojo.docker.utils.properties.provider.SystemEnvValueProvider;
-import io.kodokojo.docker.utils.properties.provider.SystemPropertyValueProvider;
+import io.kodokojo.docker.utils.properties.provider.*;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedList;
+import java.util.Properties;
 
 public class StandardModule extends AbstractModule {
+
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(StandardModule.class);
+
 
     @Override
     protected void configure() {
@@ -61,36 +71,20 @@ public class StandardModule extends AbstractModule {
 
     }
 
-    @Provides
-    @Singleton
-    GitBashbrewConfig provideGitBashbrewConfig() {
-        LinkedList<PropertyValueProvider> valueProviders = new LinkedList<>();
-        OrderedMergedValueProvider valueProvider = new OrderedMergedValueProvider(valueProviders);
 
-        SystemPropertyValueProvider systemPropertyValueProvider = new SystemPropertyValueProvider();
-        valueProviders.add(systemPropertyValueProvider);
-
-        SystemEnvValueProvider systemEnvValueProvider = new SystemEnvValueProvider();
-        valueProviders.add(systemEnvValueProvider);
-
-        PropertyResolver propertyResolver = new PropertyResolver(valueProvider);
-        return propertyResolver.createProxy(GitBashbrewConfig.class);
-    }
 
     @Provides
     @Singleton
-    DockerFileSource provideDockerFileSource(DockerFileRepository dockerFileRepository, GitDockerFileProjectFetcher gitDockerFileProjectFetcher, GitBashbrewConfig gitBashbrewConfig) {
-        File baseDire = new File("");
-        String workspace = baseDire.getAbsolutePath() + File.separator + "workspace";
+    DockerFileSource provideDockerFileSource(DockerFileRepository dockerFileRepository, GitDockerFileProjectFetcher gitDockerFileProjectFetcher, GitBashbrewConfig gitBashbrewConfig, ApplicationConfig applicationConfig) {
+        String workspace = applicationConfig.workspace();
+        System.out.println("Workspace : " + workspace);
         return new GitBashbrewDockerFileSource(workspace, null, gitBashbrewConfig.bashbrewGitUrl(), gitBashbrewConfig.bashbrewLibraryPath(), dockerFileRepository, gitDockerFileProjectFetcher);
     }
 
     @Provides
     @Singleton
-    GitDockerFileProjectFetcher provideGitDockerFileProjectFetcher(GitBashbrewConfig gitBashbrewConfig) {
-        File baseDire = new File("");
-        String workspace = baseDire.getAbsolutePath() + File.separator + "workspace" +File.separator + "dockerfileProjects";
-        return new GitDockerFileProjectFetcher(workspace);
+    GitDockerFileProjectFetcher provideGitDockerFileProjectFetcher(ApplicationConfig applicationConfig) {
+        return new GitDockerFileProjectFetcher(applicationConfig.dockerFileProject());
     }
 
     @Provides
@@ -107,6 +101,20 @@ public class StandardModule extends AbstractModule {
 
     @Provides
     @Singleton
+    DockerFileBuildOrchestrator provideDockerFileBuildOrchestrator(DockerFileRepository dockerFileRepository, DockerFileSource dockerFileSource) {
+        return new DefaultDockerFileBuildOrchestrator(dockerFileRepository, dockerFileSource);
+    }
+
+    @Provides
+    @Singleton
+    DockerImageBuilder provideDockerImageBuilder(ApplicationConfig applicationConfig, DockerConfig dockerConfig, DockerClient dockerClient, GitDockerFileProjectFetcher dockerFileProjectFetcher) {
+        DockerClientDockerImageBuilder dockerClientDockerImageBuilder = new DockerClientDockerImageBuilder(dockerClient, new File(applicationConfig.dockerImageBuildDir()), dockerFileProjectFetcher);
+        dockerClientDockerImageBuilder.defineRefistry(dockerConfig.dockerRegistryUrl());
+        return dockerClientDockerImageBuilder;
+    }
+
+    @Provides
+    @Singleton
     @Named("registryRequestWorker")
     ActorRef provideRequestWorker(ActorSystem system) {
         return system.actorOf(Props.create(RegistryRequestWorker.class));
@@ -115,8 +123,15 @@ public class StandardModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("dependencyDockerfileUpdateDispatcher")
-    ActorRef provideDependencyDockerfileUpdateDispatcher(ActorSystem system, DockerFileBuildOrchestrator orchestrator) {
-        return system.actorOf(Props.create(DependencyDockerfileUpdateDispatcher.class, orchestrator));
+    ActorRef provideDependencyDockerfileUpdateDispatcher(ActorSystem system, DockerFileBuildOrchestrator orchestrator,  @Named("dockerImageBuilder") ActorRef dockerImageBuilder) {
+        return system.actorOf(Props.create(DependencyDockerfileUpdateDispatcher.class, orchestrator, dockerImageBuilder));
+    }
+
+    @Provides
+    @Singleton
+    @Named("dockerImageBuilder")
+    ActorRef provideDockerImageBuilder(ActorSystem system, DockerImageBuilder builder) {
+        return system.actorOf(Props.create(DockerImageBuilderWorker.class, builder));
     }
 
     @Provides
@@ -133,9 +148,5 @@ public class StandardModule extends AbstractModule {
         return system.actorOf(Props.create(PushEventChecker.class, dockerImageRepository, dependencyDockerfileUpdateDispatcher));
     }
 
-    @Provides
-    @Singleton
-    DockerFileBuildOrchestrator provideDockerFileBuildOrchestrator(DockerFileRepository dockerFileRepository, DockerFileSource dockerFileSource) {
-        return new DefaultDockerFileBuildOrchestrator(dockerFileRepository, dockerFileSource);
-    }
+
 }

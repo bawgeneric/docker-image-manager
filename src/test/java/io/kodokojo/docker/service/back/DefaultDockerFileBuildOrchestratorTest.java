@@ -22,10 +22,7 @@ package io.kodokojo.docker.service.back;
  * #L%
  */
 
-import io.kodokojo.docker.model.Image;
-import io.kodokojo.docker.model.Layer;
-import io.kodokojo.docker.model.RegistryEvent;
-import io.kodokojo.docker.model.StringToImageNameConverter;
+import io.kodokojo.docker.model.*;
 import io.kodokojo.docker.service.DefaultDockerFileRepository;
 import io.kodokojo.docker.service.DockerFileRepository;
 import io.kodokojo.docker.service.connector.DockerFileSource;
@@ -60,9 +57,9 @@ public class DefaultDockerFileBuildOrchestratorTest {
         Image image = new Image(StringToImageNameConverter.convert("jpthiery/busybox"), new ArrayList<>());
         Layer layer = new Layer("sha1:123456", 42);
         RegistryEvent registryEvent = new RegistryEvent(new Date(), RegistryEvent.EventType.PUSH, RegistryEvent.EventMethod.PUT, null, image, layer);
-        boolean res = orchestrator.receiveUpdateEvent(registryEvent);
+        DockerFileBuildPlan res = orchestrator.receiveUpdateEvent(registryEvent);
 
-        assertThat(res).isFalse();
+        assertThat(res).isNotNull();
 
     }
 

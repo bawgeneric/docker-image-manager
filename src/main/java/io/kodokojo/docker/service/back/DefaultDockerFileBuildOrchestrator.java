@@ -69,7 +69,7 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
     }
 
     @Override
-    public boolean receiveUpdateEvent(RegistryEvent registryEvent) {
+    public DockerFileBuildPlan receiveUpdateEvent(RegistryEvent registryEvent) {
         if (registryEvent == null) {
             throw new IllegalArgumentException("registryEvent must be defined.");
         }
@@ -91,20 +91,24 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
                     current = dockerFileRepository.getDockerFileFromImageName(imageName);
                 } else {
                     LOGGER.error("Unable to retrieve DockerFile for image {}", imageName.getFullyQualifiedName());
-                    return false;
+                    return null;
                 }
             }
             DockerFileBuildPlan created = create(current, registryEvent.getTimestamp());
-            writeLock.lock();
-            try {
-                dockerFileBuildPlan = buildPlan.get(imageName);
-                //  Check DockerBuildPLan not already Added since the read check had been unlocked.
-                if (dockerFileBuildPlan == null) {
-                    buildPlan.put(imageName, created);
-                    return true;
+            if (CollectionUtils.isNotEmpty(created.getChildren())) {
+                writeLock.lock();
+                try {
+                    dockerFileBuildPlan = buildPlan.get(imageName);
+                    //  Check DockerBuildPLan not already Added since the read check had been unlocked.
+                    if (dockerFileBuildPlan == null) {
+                        buildPlan.put(imageName, created);
+                        return dockerFileBuildPlan;
+                    }
+                } finally {
+                    writeLock.unlock();
                 }
-            } finally {
-                writeLock.unlock();
+            } else if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Aborting DockerBuildPlan for image {}, this image haven't any Child", imageName.getFullyQualifiedName());
             }
         } else if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("DockerBuildPlan already exist for image {}.", imageName.getFullyQualifiedName());
@@ -114,13 +118,15 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
         readLock.lock();
         try {
             dockerFileBuildPlan = buildPlan.get(imageName);
-            dockerFileBuildPlan.setLastUpdateDate(registryEvent.getTimestamp());
+            if (dockerFileBuildPlan != null) {
+                dockerFileBuildPlan.setLastUpdateDate(registryEvent.getTimestamp());
+            }
         } finally {
             readLock.unlock();
         }
         //  DockerBuildPlan already exist, update the last date for update.
 
-        return false;
+        return dockerFileBuildPlan;
     }
 
     @Override
@@ -144,7 +150,8 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
         Set<DockerFile> dockerFileChildOf = dockerFileRepository.getDockerFileChildOf(current);
         Set<DockerFileBuildPlan> children = new HashSet<>();
         if (CollectionUtils.isNotEmpty(dockerFileChildOf)) {
-            children.addAll(dockerFileChildOf.stream().map(dockerFileChild -> create(dockerFileChild, timestamp)).collect(Collectors.toList()));
+            List<DockerFileBuildPlan> createdChildren = dockerFileChildOf.stream().map(dockerFileChild -> create(dockerFileChild, timestamp)).collect(Collectors.toList());
+            children.addAll(createdChildren);
         }
         GitDockerFileScmEntry dockerFileScmEntry = dockerFileSource.getDockerFileScmEntry(current.getImageName());
         DockerFileBuildPlan res = new DockerFileBuildPlan(current, children, dockerFileScmEntry, timestamp);

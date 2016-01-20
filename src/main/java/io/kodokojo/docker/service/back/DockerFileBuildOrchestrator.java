@@ -33,7 +33,7 @@ public interface DockerFileBuildOrchestrator {
      * @param registryEvent The event to publish
      * @return <code>true</code> if the event create a new {@link DockerFileBuildPlan}.
      */
-    boolean receiveUpdateEvent(RegistryEvent registryEvent);
+    DockerFileBuildPlan receiveUpdateEvent(RegistryEvent registryEvent);
 
     DockerFileBuildPlan getBuildPlan(ImageName imageName);
 

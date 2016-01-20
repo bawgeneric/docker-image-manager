@@ -23,22 +23,25 @@ package io.kodokojo.docker.bdd.stage.docker;
  */
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.*;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.*;
+import io.kodokojo.docker.config.DockerConfig;
+import io.kodokojo.docker.config.PropertyModule;
 import io.kodokojo.docker.utils.DockerClientSupport;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Rule;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 //  TODO Move this class in a docker-commons project
 public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
@@ -66,9 +69,13 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
     @ProvidedScenarioState
     Map<String, String> containers = new HashMap<>();
 
+    private DockerConfig dockerConfig;
+
     @BeforeScenario
     public void create_a_docker_client() {
         dockerClient = dockerClientSupport.getDockerClient();
+        Injector injector = Guice.createInjector(new PropertyModule());
+        dockerConfig = injector.getInstance(DockerConfig.class);
     }
 
     @AfterScenario
@@ -98,13 +105,20 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
         ExposedPort exposedPort = ExposedPort.tcp(8080);
         portBinding.bind(exposedPort, Ports.Binding(null));
 
-        CreateContainerResponse containerResponseId = dockerClient.createContainerCmd("java:8-jre")
-                .withBinds(new Bind(projectJarFile.getAbsolutePath(), new Volume("/project/app.jar")), new Bind(logbakcConfigFile.getAbsolutePath(), new Volume("/project/int-logback-config.xml")))
+        ArrayList<Bind> bind = new ArrayList<>(Arrays.asList(new Bind(projectJarFile.getAbsolutePath(), new Volume("/project/app.jar")),
+                new Bind(logbakcConfigFile.getAbsolutePath(), new Volume("/project/int-logback-config.xml"))));
+        CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd("java:8-jre")
                 .withPortBindings(portBinding)
                 .withExposedPorts(exposedPort)
                 .withWorkingDir("/project")
-                .withCmd("java", "-Dlogback.configurationFile=/project/int-logback-config.xml","-Dgit.bashbrew.url=git://github.com/kodokojo/acme" , "-Dgit.bashbrew.library.path=bashbrew/library", "-jar", "/project/app.jar")
-                .exec();
+                .withCmd("java", "-Dlogback.configurationFile=/project/int-logback-config.xml", "-Dgit.bashbrew.url=git://github.com/kodokojo/acme", "-Dgit.bashbrew.library.path=bashbrew/library", "-jar", "/project/app.jar");
+
+        if (dockerConfig != null && StringUtils.isNotBlank(dockerConfig.dockerServerUrl())) {
+            createContainerCmd = createContainerCmd.withEnv("DOCKER_HOST="+dockerConfig.dockerServerUrl(), "DOCKER_CERT_PATH="+dockerConfig.dockerCertPath());
+            bind.add(new Bind(dockerConfig.dockerCertPath(), new Volume(dockerConfig.dockerCertPath())));
+        }
+
+        CreateContainerResponse containerResponseId = createContainerCmd.withBinds(bind.toArray(new Bind[0])).exec();
 
         this.containerId = containerResponseId.getId();
         containers.put(DOCKER_IMAGE_MANAGER_KEY, containerId);
@@ -114,7 +128,7 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
 
         String url = dockerClientSupport.getHttpContainerUrl(containerId, 8080) + "/api";
 
-        int timeout = 5000;
+        int timeout = 10000;
         boolean available = dockerClientSupport.waitUntilHttpRequestRespond(url, timeout);
         if (!available) {
             throw new IllegalStateException("Unable to obtain an available Docker image manager after " + timeout);

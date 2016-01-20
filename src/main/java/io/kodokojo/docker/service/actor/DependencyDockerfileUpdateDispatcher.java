@@ -23,13 +23,18 @@ package io.kodokojo.docker.service.actor;
  */
 
 import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
 import akka.japi.pf.ReceiveBuilder;
+import io.kodokojo.docker.model.DockerFileBuildPlan;
+import io.kodokojo.docker.model.DockerFileBuildRequest;
 import io.kodokojo.docker.model.RegistryEvent;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.inject.Named;
+import java.util.Date;
 
 public class DependencyDockerfileUpdateDispatcher extends AbstractActor {
 
@@ -38,15 +43,25 @@ public class DependencyDockerfileUpdateDispatcher extends AbstractActor {
     private final DockerFileBuildOrchestrator dockerFileBuildOrchestrator;
 
     @Inject
-    public DependencyDockerfileUpdateDispatcher(DockerFileBuildOrchestrator dockerFileBuildOrchestrator) {
+    public DependencyDockerfileUpdateDispatcher(DockerFileBuildOrchestrator dockerFileBuildOrchestrator, @Named("dockerImageBuilder") ActorRef dockerImageBuilder) {
         if (dockerFileBuildOrchestrator == null) {
             throw new IllegalArgumentException("dockerFileBuildOrchestrator must be defined.");
         }
         this.dockerFileBuildOrchestrator = dockerFileBuildOrchestrator;
         receive(ReceiveBuilder.match(RegistryEvent.class, push -> {
-            boolean dockerFileBuildPlan = this.dockerFileBuildOrchestrator.receiveUpdateEvent(push);
-            if (dockerFileBuildPlan) {
-                LOGGER.info("Adding new DockerFileBuildPlan {}", dockerFileBuildOrchestrator.getBuildPlan(push.getImage().getName()));
+            DockerFileBuildPlan dockerFileBuildPlan = this.dockerFileBuildOrchestrator.receiveUpdateEvent(push);
+            if (dockerFileBuildPlan != null) {
+                LOGGER.info("Adding new DockerFileBuildPlan {}", dockerFileBuildPlan);
+                for (DockerFileBuildPlan child : dockerFileBuildPlan.getChildren()) {
+                    DockerFileBuildRequest dockerFileBuildRequest = new DockerFileBuildRequest(child.getDockerFile(),  child.getDockerFileScmEntry());
+                    Date now = new Date();
+                    child.setLastUpdateDate(now);
+                    child.setLaunchBuildDate(now);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Request Build of Docker Image {}", child.getDockerFile().getImageName().getFullyQualifiedName());
+                    }
+                    dockerImageBuilder.tell(dockerFileBuildRequest, self());
+                }
             }
         }).build());
     }

@@ -146,6 +146,7 @@ public class GitBashbrewDockerFileSource implements DockerFileSource<GitDockerFi
             }
         }
         libraryDirectory = new File(bashbrewGitDir + File.separator + bashbrewGitLibraryPath);
+        fetchAllDockerFile();
     }
 
     public GitBashbrewDockerFileSource(String localWorkspace, String defaultUser, String bashbrewGitUrl, String bashbrewGitLibraryPath, DockerFileRepository dockerFileRepository,GitDockerFileProjectFetcher gitDockerFileProjectFetcher) {

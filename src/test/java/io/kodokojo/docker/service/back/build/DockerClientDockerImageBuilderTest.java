@@ -30,10 +30,7 @@ import com.github.dockerjava.api.command.TagImageCmd;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
-import io.kodokojo.docker.model.DockerFile;
-import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.docker.model.ImageName;
-import io.kodokojo.docker.model.StringToImageNameConverter;
+import io.kodokojo.docker.model.*;
 import io.kodokojo.docker.service.connector.DockerFileProjectFetcher;
 import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
 import org.junit.Before;
@@ -82,7 +79,7 @@ public class DockerClientDockerImageBuilderTest {
         ImageName centos = StringToImageNameConverter.convert("centos");
         DockerFile dockerFile = new DockerFile(imageName, centos);
         GitDockerFileScmEntry dockerFileScmEntry = new GitDockerFileScmEntry(imageName, "git://github.com/kodokojo/acme", "HEAD", "/dockerfile");
-        DockerFileBuildPlan dockerFileBuildPlan = new DockerFileBuildPlan(dockerFile, Collections.EMPTY_SET, dockerFileScmEntry, new Date());
+        DockerFileBuildRequest dockerFileBuildRequest = new DockerFileBuildRequest(dockerFile, dockerFileScmEntry);
 
         when(dockerFileProjectFetcher.checkoutDockerFileProject(dockerFileScmEntry)).thenReturn(temporaryFolder.newFolder());
         PullImageCmd pullImgCmd  = mock(PullImageCmd.class);
@@ -114,7 +111,8 @@ public class DockerClientDockerImageBuilderTest {
 
         TestDockerImageBuildCallback callback = new TestDockerImageBuildCallback();
 
-        imageBuilder.build(dockerFileBuildPlan, callback, "localhost:5000");
+        imageBuilder.defineRefistry("localhost:5000");
+        imageBuilder.build(dockerFileBuildRequest, callback);
 
         String expectedImageName = "localhost:5000/jpthiery/busybox:latest";
 

@@ -1,4 +1,4 @@
-package io.kodokojo.docker.service.back.build;
+package io.kodokojo.docker.config;
 
 /*
  * #%L
@@ -22,13 +22,21 @@ package io.kodokojo.docker.service.back.build;
  * #L%
  */
 
-import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.docker.model.DockerFileBuildRequest;
+import io.kodokojo.docker.utils.properties.Key;
+import io.kodokojo.docker.utils.properties.PropertyConfig;
 
-public interface DockerImageBuilder {
+public interface DockerConfig extends PropertyConfig {
 
-    void defineRefistry(String registry);
+    @Key("DOCKER_HOST")
+    String dockerServerUrl();
 
-    void build(DockerFileBuildRequest dockerFileBuildRequest, DockerImageBuildCallback callback);
+    @Key("DOCKER_CERT_PATH")
+    String dockerCertPath();
+
+    @Key("DOCKER_TLS_VERIFY")
+    String dockerTlsVerify();
+
+    @Key("docker.registry.url")
+    String dockerRegistryUrl();
 
 }

@@ -1,4 +1,4 @@
-package io.kodokojo.docker.service.back.build;
+package io.kodokojo.docker.config;
 
 /*
  * #%L
@@ -22,13 +22,18 @@ package io.kodokojo.docker.service.back.build;
  * #L%
  */
 
-import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.docker.model.DockerFileBuildRequest;
+import io.kodokojo.docker.utils.properties.Key;
+import io.kodokojo.docker.utils.properties.PropertyConfig;
 
-public interface DockerImageBuilder {
+public interface ApplicationConfig extends PropertyConfig {
 
-    void defineRefistry(String registry);
+    @Key("workspace")
+    String workspace();
 
-    void build(DockerFileBuildRequest dockerFileBuildRequest, DockerImageBuildCallback callback);
+    @Key("dockerFileProject")
+    String dockerFileProject();
+
+    @Key("dockerFile.buildDir")
+    String dockerImageBuildDir();
 
 }

@@ -31,6 +31,10 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.squareup.okhttp.*;
+import io.kodokojo.docker.config.DockerConfig;
+import io.kodokojo.docker.utils.properties.PropertyResolver;
+import io.kodokojo.docker.utils.properties.provider.DockerConfigValueProvider;
+import io.kodokojo.docker.utils.properties.provider.SystemEnvValueProvider;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assume;
 import org.junit.rules.ExternalResource;
@@ -61,25 +65,38 @@ public class DockerClientSupport {
 
     private final boolean dockerIsPresent;
 
+
+
     public DockerClientSupport(DockerClientConfig config) {
         dockerClient = DockerClientBuilder.getInstance(config).build();
+        /*
         if (isNotWorking(dockerClient)) {
             String userHome = System.getProperty("user.home");
             config = DockerClientConfig.createDefaultConfigBuilder().withUri("https://192.168.99.100:2376").withDockerCertPath(userHome + "/.docker/machine/machines/default").build();
             dockerClient = DockerClientBuilder.getInstance(config).build();
             LOGGER.warn("Unable to connect to Docker daemon with default configuration, try to connect to a local Docker machine instance launch under name 'default' available on socket 'https://192.168.99.100:2376'");
         }
+        */
         remoteDaemonDockerIp = config.getUri() != null ? config.getUri().getHost() : "127.0.0.1";
         containerToClean = new ArrayList<>();
         dockerIsPresent = isDockerWorking();
     }
 
     public DockerClientSupport() {
-        this(DockerClientConfig.createDefaultConfigBuilder().build());
+        this(createDockerConfigFromProperties());
     }
 
     public boolean isDockerIsPresent() {
         return dockerIsPresent;
+    }
+
+    private static DockerClientConfig createDockerConfigFromProperties() {
+        PropertyResolver propertyResolver = new PropertyResolver(new DockerConfigValueProvider(new SystemEnvValueProvider()));
+        DockerConfig dockerConfig = propertyResolver.createProxy(DockerConfig.class);
+        if (StringUtils.isBlank(dockerConfig.dockerServerUrl())) {
+            return DockerClientConfig.createDefaultConfigBuilder().build();
+        }
+        return DockerClientConfig.createDefaultConfigBuilder().withDockerCertPath(dockerConfig.dockerCertPath()).withUri(dockerConfig.dockerServerUrl()).build();
     }
 
     public void addContainerIdToClean(String id) {

@@ -43,6 +43,7 @@ import org.eclipse.jgit.treewalk.filter.TreeFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -79,6 +80,7 @@ public class GitDockerFileProjectFetcher implements DockerFileProjectFetcher<Git
         this.lastDockerFileGitPullDates = new HashMap<>();
     }
 
+    @Inject
     public GitDockerFileProjectFetcher(String dockerfileGitDirPath) {
         this(dockerfileGitDirPath, DEFAULT_DOCKERFILE_GIT_PULL_DELAY);
     }
