@@ -22,12 +22,10 @@ package io.kodokojo.docker.service.back.build;
  * #L%
  */
 
-import io.kodokojo.docker.model.DockerFile;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.docker.model.DockerFileScmEntry;
 
-public interface DockerImageBuilder<T extends DockerFileScmEntry> {
+public interface DockerImageBuilder {
 
-    void build(DockerFileBuildPlan<T> dockerFileBuildPlan, DockerImageBuildCallback callback, String registry);
+    void build(DockerFileBuildPlan dockerFileBuildPlan, DockerImageBuildCallback callback, String registry);
 
 }

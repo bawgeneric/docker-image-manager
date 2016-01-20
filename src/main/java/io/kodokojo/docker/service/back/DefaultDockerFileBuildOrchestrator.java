@@ -147,7 +147,7 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
             children.addAll(dockerFileChildOf.stream().map(dockerFileChild -> create(dockerFileChild, timestamp)).collect(Collectors.toList()));
         }
         GitDockerFileScmEntry dockerFileScmEntry = dockerFileSource.getDockerFileScmEntry(current.getImageName());
-        DockerFileBuildPlan<GitDockerFileScmEntry> res = new DockerFileBuildPlan<>(current, children, dockerFileScmEntry, timestamp);
+        DockerFileBuildPlan res = new DockerFileBuildPlan(current, children, dockerFileScmEntry, timestamp);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Create following DockerBuildPlan for image {} : {}", current.getImageName().getFullyQualifiedName(), res);
         }

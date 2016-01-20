@@ -76,7 +76,7 @@ public class ZookeeperJsonObjectValueProviderTest {
             DockerFile dockerFile = new DockerFile(imageName);
             GitDockerFileScmEntry dockerFileScmEntry = new GitDockerFileScmEntry(imageName,"git://github.com/kodokojo/acme", "HEAD", "dockerfiles/busybox");
 
-            DockerFileBuildPlan<GitDockerFileScmEntry> dockerFileBuildPlan = new DockerFileBuildPlan<>(dockerFile,children, dockerFileScmEntry,new Date());
+            DockerFileBuildPlan dockerFileBuildPlan = new DockerFileBuildPlan(dockerFile,children, dockerFileScmEntry,new Date());
             //Gson gson = new GsonBuilder().registerTypeAdapter(GitDockerFileScmEntry.class, new GsonInterfaceAdapter<GitDockerFileScmEntry>()).create();
             Gson gson = new GsonBuilder().create();
             LOGGER.debug("Add follonwing data in Zookeeper node '/maconfig/keyA':\n{}",gson.toJson(dockerFileBuildPlan) );
@@ -87,7 +87,7 @@ public class ZookeeperJsonObjectValueProviderTest {
         }
 
         ZookeeperJsonObjectValueProvider zookeeperJsonObjectValueProvider = new ZookeeperJsonObjectValueProvider(zookeeperResources.getZkUrl(), null);
-        DockerFileBuildPlan<GitDockerFileScmEntry> dockerFileBuildPlan = zookeeperJsonObjectValueProvider.providePropertyValue(DockerFileBuildPlan.class, "/maconfig/keyA");
+        DockerFileBuildPlan dockerFileBuildPlan = zookeeperJsonObjectValueProvider.providePropertyValue(DockerFileBuildPlan.class, "/maconfig/keyA");
 
         assertThat(dockerFileBuildPlan).isNotNull();
         assertThat(dockerFileBuildPlan.getDockerFile().getImageName()).isEqualTo(imageName);

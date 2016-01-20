@@ -36,12 +36,13 @@ import io.kodokojo.docker.model.ImageName;
 import io.kodokojo.docker.model.StringToImageNameConverter;
 import io.kodokojo.docker.service.connector.DockerFileProjectFetcher;
 import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
-import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +55,9 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class DockerClientDockeImageBuilderTest {
+public class DockerClientDockerImageBuilderTest {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DockerClientDockerImageBuilderTest.class);
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -72,7 +75,7 @@ public class DockerClientDockeImageBuilderTest {
     @Test
     public void valid_build_execution() throws IOException, InterruptedException {
 
-        DockerClientDockeImageBuilder<GitDockerFileScmEntry> imageBuilder = new DockerClientDockeImageBuilder<>(dockerClient, temporaryFolder.newFolder(), dockerFileProjectFetcher);
+        DockerClientDockerImageBuilder imageBuilder = new DockerClientDockerImageBuilder(dockerClient, temporaryFolder.newFolder(), dockerFileProjectFetcher);
 
 
         ImageName imageName = StringToImageNameConverter.convert("jpthiery/busybox");
@@ -157,5 +160,9 @@ public class DockerClientDockeImageBuilderTest {
             fail(reason);
         }
 
+        @Override
+        public void appendOutput(String output) {
+            LOGGER.debug("Output : {}",  output);
+        }
     }
 }

@@ -124,8 +124,8 @@ public class DockerClientSupport {
 
     public void stopAndRemoveContainer() {
         containerToClean.forEach(id -> {
-        //    dockerClient.stopContainerCmd(id).exec();
-        //    dockerClient.removeContainerCmd(id).exec();
+            dockerClient.stopContainerCmd(id).exec();
+            dockerClient.removeContainerCmd(id).exec();
             LOGGER.debug("Stopped and removed container id {}", id);
         });
         containerToClean.clear();

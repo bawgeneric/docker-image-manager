@@ -23,11 +23,11 @@ package io.kodokojo.docker.service.back.build;
  */
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.docker.model.DockerFileScmEntry;
 import io.kodokojo.docker.model.ImageName;
 import io.kodokojo.docker.service.connector.DockerFileProjectFetcher;
 import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
@@ -38,17 +38,17 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Date;
 
-public class DockerClientDockeImageBuilder<T extends DockerFileScmEntry> implements DockerImageBuilder<T> {
+public class DockerClientDockerImageBuilder implements DockerImageBuilder {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DockerClientDockeImageBuilder.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DockerClientDockerImageBuilder.class);
 
     private final File workDir;
 
     private final DockerClient dockerClient;
 
-    private DockerFileProjectFetcher<T> dockerFileProjectFetcher;
+    private DockerFileProjectFetcher dockerFileProjectFetcher;
 
-    public DockerClientDockeImageBuilder(DockerClient dockerClient, File workDir, DockerFileProjectFetcher<T> dockerFileProjectFetcher) {
+    public DockerClientDockerImageBuilder(DockerClient dockerClient, File workDir, DockerFileProjectFetcher dockerFileProjectFetcher) {
         if (dockerClient == null) {
             throw new IllegalArgumentException("dockerClient must be defined.");
         }
@@ -89,7 +89,7 @@ public class DockerClientDockeImageBuilder<T extends DockerFileScmEntry> impleme
             }
 
             GitDockerFileScmEntry dockerFileScmEntry = dockerFileBuildPlan.getDockerFileScmEntry();
-            File projectDir = dockerFileProjectFetcher.checkoutDockerFileProject((T) dockerFileScmEntry);
+            File projectDir = dockerFileProjectFetcher.checkoutDockerFileProject(dockerFileScmEntry);
             if (projectDir == null || !projectDir.canRead()) {
                 String message = String.format("Unable to read directory for project %s at following path '%s'", dockerFileBuildPlan.getDockerFile().getImageName().getFullyQualifiedName(), projectDir.getAbsolutePath());
                 throw new IllegalStateException(message);
@@ -112,7 +112,14 @@ public class DockerClientDockeImageBuilder<T extends DockerFileScmEntry> impleme
 
             if (pulled) {
                 callback.buildBegin(new Date());
-                String imageId = dockerClient.buildImageCmd(dockerFileDirectory).exec(new BuildImageResultCallback()).awaitImageId();
+                BuildImageResultCallback resultCallback = new BuildImageResultCallback() {
+                    @Override
+                    public void onNext(BuildResponseItem item) {
+                        callback.appendOutput(item.getStream());
+                        super.onNext(item);
+                    }
+                };
+                String imageId = dockerClient.buildImageCmd(dockerFileDirectory).exec(resultCallback).awaitImageId();
                 Date buildEnd = new Date();
                 if (StringUtils.isNotBlank(imageId)) {
                     callback.buildSuccess(buildEnd);

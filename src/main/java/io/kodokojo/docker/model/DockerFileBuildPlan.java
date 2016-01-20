@@ -29,7 +29,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-public class DockerFileBuildPlan<T extends DockerFileScmEntry> {
+public class DockerFileBuildPlan {
 
     private final DockerFile dockerFile;
 

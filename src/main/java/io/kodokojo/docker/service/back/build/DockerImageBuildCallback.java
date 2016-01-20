@@ -41,4 +41,6 @@ public interface DockerImageBuildCallback {
 
     void buildFailed(String reason, Date failDate);
 
+    void appendOutput(String output);
+
 }
