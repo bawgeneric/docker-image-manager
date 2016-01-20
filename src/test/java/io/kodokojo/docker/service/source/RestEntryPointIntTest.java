@@ -33,11 +33,10 @@ import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import io.kodokojo.docker.config.StandardModule;
+import io.kodokojo.docker.config.StandardServiceModule;
 import io.kodokojo.docker.utils.DockerClientSupport;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +56,7 @@ public class RestEntryPointIntTest {
     @Before
     public void setup() {
 
-        injector = Guice.createInjector(new StandardModule());
+        injector = Guice.createInjector(new StandardServiceModule());
 
         pull("busybox:latest");
         pull("registry:2");
