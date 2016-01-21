@@ -93,8 +93,8 @@ public class StandardServiceModule extends AbstractModule {
 
     @Provides
     @Singleton
-    ServiceLocator provideServiceLocator(DockerSupport dockerSupport) {
-        return new DockerServiceLocator(dockerSupport);
+    ServiceLocator provideServiceLocator(DockerSupport dockerSupport, KodokojoConfig kodokojoConfig) {
+        return new DockerServiceLocator(dockerSupport, kodokojoConfig);
     }
 
     @Provides

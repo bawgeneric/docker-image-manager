@@ -25,6 +25,7 @@ package io.kodokojo.docker.utils.serviceLocator.docker;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Filters;
+import io.kodokojo.docker.config.KodokojoConfig;
 import io.kodokojo.docker.utils.docker.DockerSupport;
 import io.kodokojo.docker.utils.serviceLocator.Service;
 import io.kodokojo.docker.utils.serviceLocator.ServiceLocator;
@@ -34,9 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
@@ -44,15 +43,23 @@ public class DockerServiceLocator implements ServiceLocator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerServiceLocator.class);
 
+    public static final String KODOKOJO = "kodokojo-";
+
     private final DockerSupport dockerSupport;
 
     private final DockerClient dockerClient;
+    
+    private final KodokojoConfig kodokojoConfig;
 
     @Inject
-    public DockerServiceLocator(DockerSupport dockerSupport) {
+    public DockerServiceLocator(DockerSupport dockerSupport, KodokojoConfig kodokojoConfig) {
         if (dockerSupport == null) {
             throw new IllegalArgumentException("dockerClient must be defined.");
         }
+        if (kodokojoConfig == null) {
+            throw new IllegalArgumentException("kodokojoConfig must be defined.");
+        }
+        this.kodokojoConfig = kodokojoConfig;
         this.dockerSupport = dockerSupport;
         this.dockerClient = dockerSupport.createDockerClient();
     }
@@ -62,7 +69,15 @@ public class DockerServiceLocator implements ServiceLocator {
         if (isBlank(name)) {
             throw new IllegalArgumentException("name must be defined.");
         }
-        List<Container> containers = dockerClient.listContainersCmd().withFilters(new Filters().withLabels("kodokojo-type=registry")).exec();
+        Filters filters = new Filters()
+                .withLabels(KODOKOJO + "projectName=" + kodokojoConfig.projectName(),
+                        KODOKOJO + "stackName=" + kodokojoConfig.stackName(),
+                        KODOKOJO + "stackType=" + kodokojoConfig.stackType(),
+                        KODOKOJO + "componentName=" + name);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("DockerServiceLocator lookup container with following criteria {}", filters.toString());
+        }
+        List<Container> containers = dockerClient.listContainersCmd().withFilters(filters).exec();
 
         if (CollectionUtils.isNotEmpty(containers)) {
             Set<Service> res = new HashSet<>(containers.size());

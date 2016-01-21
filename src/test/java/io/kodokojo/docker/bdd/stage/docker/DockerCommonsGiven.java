@@ -95,6 +95,8 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(baseDire.getAbsolutePath()).append(File.separator);
         stringBuilder.append("src").append(File.separator).append("test").append(File.separator).append("resources");
+        File testResources = new File(stringBuilder.toString());
+        stringBuilder = new StringBuilder(testResources.getAbsolutePath());
         stringBuilder.append(File.separator).append("int-logback-config.xml");
         String logbackConfigPath = stringBuilder.toString();
         File logbakcConfigFile = new File(logbackConfigPath);
@@ -106,12 +108,21 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
         portBinding.bind(exposedPort, Ports.Binding(null));
 
         ArrayList<Bind> bind = new ArrayList<>(Arrays.asList(new Bind(projectJarFile.getAbsolutePath(), new Volume("/project/app.jar")),
-                new Bind(logbakcConfigFile.getAbsolutePath(), new Volume("/project/int-logback-config.xml"))));
+                new Bind(logbakcConfigFile.getAbsolutePath(), new Volume("/project/int-logback-config.xml"))
+        ));
+        Map<String, String> labels = new HashMap<>();
+        String prefix = "kodokojo-";
+        labels.put(prefix + "projectName", "Acme");
+        labels.put(prefix + "stackName", "DevA");
+        labels.put(prefix + "stackType", "Build");
+        labels.put(prefix + "componentType", "dockerImageManager");
+        labels.put(prefix + "componentName", "dockerImageManager");
         CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd("java:8-jre")
                 .withPortBindings(portBinding)
                 .withExposedPorts(exposedPort)
+                .withLabels(labels)
                 .withWorkingDir("/project")
-                .withCmd("java", "-Dlogback.configurationFile=/project/int-logback-config.xml", "-Dgit.bashbrew.url=git://github.com/kodokojo/acme", "-Dgit.bashbrew.library.path=bashbrew/library", "-jar", "/project/app.jar");
+                .withCmd("java", "-Dproject.name=Acme","-Dstack.name=DevA","-Dstack.type=Build","-Dlogback.configurationFile=/project/int-logback-config.xml", "-Dgit.bashbrew.url=git://github.com/kodokojo/acme", "-Dgit.bashbrew.library.path=bashbrew/library", "-jar", "/project/app.jar");
 
         if (dockerConfig != null && StringUtils.isNotBlank(dockerConfig.dockerServerUrl())) {
             createContainerCmd = createContainerCmd.withEnv("DOCKER_HOST="+dockerConfig.dockerServerUrl(), "DOCKER_CERT_PATH="+dockerConfig.dockerCertPath());
@@ -147,6 +158,7 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
             PortBinding binding = new PortBinding(Ports.Binding(null), exposedPort);
             portBindings.add(binding);
         }
+        Map<String, String> labels = new HashMap<>();
         CreateContainerResponse containerResponseId = dockerClient.createContainerCmd(imageName)
                 .withPortBindings(portBindings.toArray(new PortBinding[0]))
                 .withExposedPorts(exposedPorts.toArray(new ExposedPort[0]))
@@ -170,7 +182,12 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
         portBinding.bind(ExposedPort.tcp(5000), Ports.Binding(null));
 
         Map<String, String> labels = new HashMap<>();
-        labels.put("kodokojo-type", "registry");
+        String prefix = "kodokojo-";
+        labels.put(prefix + "projectName", "Acme");
+        labels.put(prefix + "stackName", "DevA");
+        labels.put(prefix + "stackType", "Build");
+        labels.put(prefix + "componentType", "dockerRegistry");
+        labels.put(prefix + "componentName", "registry");
         CreateContainerResponse registryCmd = dockerClient.createContainerCmd("registry:2")
                 .withBinds(new Bind(configPath, new Volume("/etc/docker/registry/config.yml")))
                 .withPortBindings(portBinding)

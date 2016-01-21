@@ -115,4 +115,11 @@ public class PropertyModule extends AbstractModule{
         return propertyResolver.createProxy(ApplicationConfig.class);
     }
 
+    @Provides
+    @Singleton
+    KodokojoConfig provideKodokojoConfig(PropertyValueProvider valueProvider) {
+        PropertyResolver propertyResolver = new PropertyResolver(valueProvider);
+        return propertyResolver.createProxy(KodokojoConfig.class);
+    }
+
 }

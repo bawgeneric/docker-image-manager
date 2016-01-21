@@ -24,18 +24,21 @@ package io.kodokojo.docker;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import io.kodokojo.docker.config.ActorModule;
-import io.kodokojo.docker.config.DockerModule;
-import io.kodokojo.docker.config.PropertyModule;
-import io.kodokojo.docker.config.StandardServiceModule;
+import io.kodokojo.docker.config.*;
 import io.kodokojo.docker.service.source.RestEntryPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Launcher {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Launcher.class);
 
     public static void main(String[] args) {
         Injector injector = Guice.createInjector( new PropertyModule(), new StandardServiceModule(), new ActorModule(), new DockerModule());
 
         RestEntryPoint entryPoint = injector.getInstance(RestEntryPoint.class);
+        KodokojoConfig kodokojoConfig = injector.getInstance(KodokojoConfig.class);
+        LOGGER.info("Docker-image-manager for project {} on stack {} {} SUCCESSFULLY Start.", kodokojoConfig.projectName(), kodokojoConfig.stackType(), kodokojoConfig.stackName());
         entryPoint.start();
 
     }

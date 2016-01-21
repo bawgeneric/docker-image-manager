@@ -69,14 +69,6 @@ public class DockerClientSupport {
 
     public DockerClientSupport(DockerClientConfig config) {
         dockerClient = DockerClientBuilder.getInstance(config).build();
-        /*
-        if (isNotWorking(dockerClient)) {
-            String userHome = System.getProperty("user.home");
-            config = DockerClientConfig.createDefaultConfigBuilder().withUri("https://192.168.99.100:2376").withDockerCertPath(userHome + "/.docker/machine/machines/default").build();
-            dockerClient = DockerClientBuilder.getInstance(config).build();
-            LOGGER.warn("Unable to connect to Docker daemon with default configuration, try to connect to a local Docker machine instance launch under name 'default' available on socket 'https://192.168.99.100:2376'");
-        }
-        */
         remoteDaemonDockerIp = config.getUri() != null ? config.getUri().getHost() : "127.0.0.1";
         containerToClean = new ArrayList<>();
         dockerIsPresent = isDockerWorking();
