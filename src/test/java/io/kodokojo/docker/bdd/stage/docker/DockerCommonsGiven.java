@@ -71,6 +71,8 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
 
     private DockerConfig dockerConfig;
 
+    private boolean dockerManagerLinked = false;
+
     @BeforeScenario
     public void create_a_docker_client() {
         dockerClient = dockerClientSupport.getDockerClient();
@@ -147,6 +149,11 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
         return self();
     }
 
+    public DockerCommonsGiven registry_send_notification_to_docker_image_manager() {
+        dockerManagerLinked = true;
+        return self();
+    }
+
 
     public DockerCommonsGiven $_image_is_started(String imageName, @Hidden int ... ports) {
 
@@ -175,8 +182,6 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
     }
 
     public DockerCommonsGiven registry_is_started() {
-        File f = new File("src/test/resources/config.yml");
-        String configPath = f.getAbsolutePath();
 
         Ports portBinding = new Ports();
         portBinding.bind(ExposedPort.tcp(5000), Ports.Binding(null));
@@ -188,11 +193,17 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
         labels.put(prefix + "stackType", "Build");
         labels.put(prefix + "componentType", "dockerRegistry");
         labels.put(prefix + "componentName", "registry");
-        CreateContainerResponse registryCmd = dockerClient.createContainerCmd("registry:2")
-                .withBinds(new Bind(configPath, new Volume("/etc/docker/registry/config.yml")))
+        CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd("registry:2")
                 .withPortBindings(portBinding)
-                .withLinks(new Link(containerId, "dockerimagemanager"))
-                .withLabels(labels)
+                .withLabels(labels);
+        if (dockerManagerLinked) {
+            File f = new File("src/test/resources/config.yml");
+            String configPath = f.getAbsolutePath();
+            createContainerCmd = createContainerCmd.withLinks(new Link(containerId, "dockerimagemanager"))
+                    .withBinds(new Bind(configPath, new Volume("/etc/docker/registry/config.yml")));
+
+        }
+        CreateContainerResponse registryCmd = createContainerCmd
                 .exec();
         dockerClientSupport.addContainerIdToClean(registryCmd.getId());
         dockerClient.startContainerCmd(registryCmd.getId()).exec();

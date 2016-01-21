@@ -65,15 +65,52 @@ public class DockerServiceLocator implements ServiceLocator {
     }
 
     @Override
-    public Set<Service> getServiceByName(String name) {
-        if (isBlank(name)) {
-            throw new IllegalArgumentException("name must be defined.");
+    public Set<Service> getService(String type, String name) {
+        List<String> labels = new ArrayList<>(Arrays.asList(
+                KODOKOJO + "componentType=" + type,
+                KODOKOJO + "componentName=" + name)
+        );
+
+        Set<Service> services = searchServicesWithLabel(labels);
+
+        if (services == null && LOGGER.isDebugEnabled() ) {
+            LOGGER.debug("No container match name {}.", name);
         }
+        return services;
+    }
+
+    @Override
+    public Set<Service> getServiceByType(String type) {
+        List<String> labels = new ArrayList<>(Arrays.asList(KODOKOJO + "componentType=" + type));
+
+        Set<Service> services = searchServicesWithLabel(labels);
+
+        if (services == null && LOGGER.isDebugEnabled() ) {
+            LOGGER.debug("No container match type {}.", type);
+        }
+        return services;
+    }
+
+    @Override
+    public Set<Service> getServiceByName(String name) {
+
+        List<String> labels = new ArrayList<>(Arrays.asList(KODOKOJO + "componentName=" + name));
+
+        Set<Service> services = searchServicesWithLabel(labels);
+
+        if (services == null && LOGGER.isDebugEnabled() ) {
+            LOGGER.debug("No container match name {}.", name);
+        }
+        return services;
+    }
+
+    private Set<Service> searchServicesWithLabel(List<String> labels) {
+        assert labels != null : "labels must be defined";
+        labels.add(KODOKOJO + "projectName=" + kodokojoConfig.projectName());
+        labels.add(KODOKOJO + "stackName=" + kodokojoConfig.stackName());
+        labels.add(KODOKOJO + "stackType=" + kodokojoConfig.stackType());
         Filters filters = new Filters()
-                .withLabels(KODOKOJO + "projectName=" + kodokojoConfig.projectName(),
-                        KODOKOJO + "stackName=" + kodokojoConfig.stackName(),
-                        KODOKOJO + "stackType=" + kodokojoConfig.stackType(),
-                        KODOKOJO + "componentName=" + name);
+                .withLabels(labels.toArray(new String[]{}));
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("DockerServiceLocator lookup container with following criteria {}", filters.toString());
         }
@@ -87,13 +124,12 @@ public class DockerServiceLocator implements ServiceLocator {
                 }
                 for (Container.Port port : container.getPorts()) {
                     if (port.getPublicPort() != null && port.getPublicPort() > 0) {
+                        String name = container.getLabels().get(KODOKOJO + "componentName");
                         res.add(new Service(name, dockerSupport.getDockerHost(), port.getPublicPort()));
                     }
                 }
             }
             return res;
-        } else if (LOGGER.isDebugEnabled() ) {
-            LOGGER.debug("No container match criteria {}.", name);
         }
         return null;
     }

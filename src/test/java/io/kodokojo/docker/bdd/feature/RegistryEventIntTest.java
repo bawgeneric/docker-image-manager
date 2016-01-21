@@ -54,6 +54,7 @@ public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, Docke
 
         given().$_is_pull(image)
                 .and().kodokojo_docker_image_manager_is_started()
+                .and().registry_send_notification_to_docker_image_manager()
                 .and().registry_is_started();
 
         when().push_image_$_to_registry(image);

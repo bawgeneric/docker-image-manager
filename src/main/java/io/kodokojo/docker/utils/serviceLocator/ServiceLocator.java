@@ -26,6 +26,10 @@ import java.util.Set;
 
 public interface ServiceLocator {
 
+    Set<Service> getService(String type, String name);
+
+    Set<Service> getServiceByType(String type);
+
     Set<Service> getServiceByName(String name);
 
 }
