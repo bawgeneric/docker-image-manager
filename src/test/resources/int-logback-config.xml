@@ -36,6 +36,7 @@
     <logger name="org.springframework" level="INFO"/>
 
     <logger name="io.kodokojo.docker" level="TRACE"/>
+    <!--logger name="com.github.dockerjava" level="DEBUG"/-->
 
 
     <root level="WARN">

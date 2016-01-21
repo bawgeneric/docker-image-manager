@@ -33,6 +33,8 @@ import com.github.dockerjava.core.command.PushImageResultCallback;
 import io.kodokojo.docker.model.*;
 import io.kodokojo.docker.service.connector.DockerFileProjectFetcher;
 import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
+import io.kodokojo.docker.utils.serviceLocator.Service;
+import io.kodokojo.docker.utils.serviceLocator.ServiceLocator;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,6 +47,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -63,16 +67,19 @@ public class DockerClientDockerImageBuilderTest {
 
     private DockerFileProjectFetcher<GitDockerFileScmEntry> dockerFileProjectFetcher;
 
+    private ServiceLocator serviceLocator;
+
     @Before
     public void setup() {
         dockerClient = mock(DockerClient.class);
         dockerFileProjectFetcher = mock(DockerFileProjectFetcher.class);
+        serviceLocator = mock(ServiceLocator.class);
     }
 
     @Test
     public void valid_build_execution() throws IOException, InterruptedException {
 
-        DockerClientDockerImageBuilder imageBuilder = new DockerClientDockerImageBuilder(dockerClient, temporaryFolder.newFolder(), dockerFileProjectFetcher);
+        DockerClientDockerImageBuilder imageBuilder = new DockerClientDockerImageBuilder(dockerClient, temporaryFolder.newFolder(), dockerFileProjectFetcher, serviceLocator);
 
 
         ImageName imageName = StringToImageNameConverter.convert("jpthiery/busybox");
@@ -80,6 +87,10 @@ public class DockerClientDockerImageBuilderTest {
         DockerFile dockerFile = new DockerFile(imageName, centos);
         GitDockerFileScmEntry dockerFileScmEntry = new GitDockerFileScmEntry(imageName, "git://github.com/kodokojo/acme", "HEAD", "/dockerfile");
         DockerFileBuildRequest dockerFileBuildRequest = new DockerFileBuildRequest(dockerFile, dockerFileScmEntry);
+
+        Set<Service> services = new HashSet<>();
+        services.add(new Service("registry", "localhost", 5000));
+        when(serviceLocator.getServiceByName(any())).thenReturn(services);
 
         when(dockerFileProjectFetcher.checkoutDockerFileProject(dockerFileScmEntry)).thenReturn(temporaryFolder.newFolder());
         PullImageCmd pullImgCmd  = mock(PullImageCmd.class);
@@ -105,22 +116,23 @@ public class DockerClientDockerImageBuilderTest {
 
         when(dockerClient.tagImageCmd(tagImageNameIdCaptor.capture(), tagRegistryCaptor.capture(),tagCaptor.capture())).thenReturn(tagImageCmd);
         when(tagImageCmd.withForce()).thenReturn(tagImageCmd);
+        when(tagImageCmd.withTag(any())).thenReturn(tagImageCmd);
         when(dockerClient.pushImageCmd(pushCaptor.capture())).thenReturn(pushImageCmd);
+        when(pushImageCmd.withTag(any())).thenReturn(pushImageCmd);
         when(pushImageCmd.exec(any())).thenReturn(pushImageResultCallback);
 
 
         TestDockerImageBuildCallback callback = new TestDockerImageBuildCallback();
 
-        imageBuilder.defineRefistry("localhost:5000");
         imageBuilder.build(dockerFileBuildRequest, callback);
 
-        String expectedImageName = "localhost:5000/jpthiery/busybox:latest";
+        String expectedImageName = "localhost:5000/jpthiery/busybox";
 
         assertThat(callback.success).isTrue();
         assertThat(pullImageNameCaptor.getValue()).isEqualTo("centos:latest");
         assertThat(tagImageNameIdCaptor.getValue()).isEqualTo("123456");
         assertThat(tagRegistryCaptor.getValue()).isEqualTo(expectedImageName);
-        assertThat(tagCaptor.getValue()).isEqualTo("");
+        assertThat(tagCaptor.getValue()).isEqualTo("latest");
         assertThat(pushCaptor.getValue()).isEqualTo(expectedImageName);
     }
 

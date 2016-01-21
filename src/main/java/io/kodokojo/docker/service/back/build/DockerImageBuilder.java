@@ -27,8 +27,6 @@ import io.kodokojo.docker.model.DockerFileBuildRequest;
 
 public interface DockerImageBuilder {
 
-    void defineRefistry(String registry);
-
     void build(DockerFileBuildRequest dockerFileBuildRequest, DockerImageBuildCallback callback);
 
 }

@@ -28,6 +28,7 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import io.kodokojo.docker.utils.docker.DockerSupport;
 import org.apache.commons.lang.StringUtils;
 
 public class DockerModule extends AbstractModule {
@@ -36,14 +37,15 @@ public class DockerModule extends AbstractModule {
         //
     }
 
+    @Provides
+    @Singleton
+    DockerClient provideDockerClient(DockerSupport dockerSupport) {
+        return dockerSupport.createDockerClient();
+    }
 
     @Provides
     @Singleton
-    DockerClient provideDockerClient(DockerConfig dockerConfig) {
-        DockerClientConfig config = DockerClientConfig.createDefaultConfigBuilder().build();
-        if (StringUtils.isNotBlank(dockerConfig.dockerServerUrl())) {
-            config = DockerClientConfig.createDefaultConfigBuilder().withDockerCertPath(dockerConfig.dockerCertPath()).withUri(dockerConfig.dockerServerUrl()).build();
-        }
-        return DockerClientBuilder.getInstance(config).build();
+    DockerSupport provideDockerSupport(DockerConfig dockerConfig) {
+        return new DockerSupport(dockerConfig);
     }
 }

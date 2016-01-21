@@ -1,4 +1,4 @@
-package io.kodokojo.docker.service.back.build;
+package io.kodokojo.docker.utils.serviceLocator;
 
 /*
  * #%L
@@ -22,27 +22,10 @@ package io.kodokojo.docker.service.back.build;
  * #L%
  */
 
-import io.kodokojo.docker.model.Image;
-import io.kodokojo.docker.model.ImageName;
+import java.util.Set;
 
-import java.util.Date;
+public interface ServiceLocator {
 
-public interface DockerImageBuildCallback {
-
-    void fromImagePulled(ImageName imageName);
-
-    void buildBegin(Date beginDate);
-
-
-
-    void buildSuccess(Date endDate);
-
-    void pushToRepositoryBegin(String repository, Date begin);
-
-    void pushToRepositoryEnd(String repository, Date begin);
-
-    void buildFailed(String reason, Date failDate);
-
-    void appendOutput(String output);
+    Set<Service> getServiceByName(String name);
 
 }

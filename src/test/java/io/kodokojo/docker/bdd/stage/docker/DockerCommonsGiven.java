@@ -169,10 +169,13 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
         Ports portBinding = new Ports();
         portBinding.bind(ExposedPort.tcp(5000), Ports.Binding(null));
 
+        Map<String, String> labels = new HashMap<>();
+        labels.put("kodokojo-type", "registry");
         CreateContainerResponse registryCmd = dockerClient.createContainerCmd("registry:2")
                 .withBinds(new Bind(configPath, new Volume("/etc/docker/registry/config.yml")))
                 .withPortBindings(portBinding)
                 .withLinks(new Link(containerId, "dockerimagemanager"))
+                .withLabels(labels)
                 .exec();
         dockerClientSupport.addContainerIdToClean(registryCmd.getId());
         dockerClient.startContainerCmd(registryCmd.getId()).exec();

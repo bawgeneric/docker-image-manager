@@ -41,6 +41,10 @@ import io.kodokojo.docker.service.back.build.DockerImageBuilder;
 import io.kodokojo.docker.service.connector.DockerFileSource;
 import io.kodokojo.docker.service.connector.git.GitBashbrewDockerFileSource;
 import io.kodokojo.docker.service.connector.git.GitDockerFileProjectFetcher;
+import io.kodokojo.docker.utils.docker.DockerSupport;
+import io.kodokojo.docker.utils.serviceLocator.Service;
+import io.kodokojo.docker.utils.serviceLocator.ServiceLocator;
+import io.kodokojo.docker.utils.serviceLocator.docker.DockerServiceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,9 +93,14 @@ public class StandardServiceModule extends AbstractModule {
 
     @Provides
     @Singleton
-    DockerImageBuilder provideDockerImageBuilder(ApplicationConfig applicationConfig, DockerConfig dockerConfig, DockerClient dockerClient, GitDockerFileProjectFetcher dockerFileProjectFetcher) {
-        DockerClientDockerImageBuilder dockerClientDockerImageBuilder = new DockerClientDockerImageBuilder(dockerClient, new File(applicationConfig.dockerImageBuildDir()), dockerFileProjectFetcher);
-        dockerClientDockerImageBuilder.defineRefistry(dockerConfig.dockerRegistryUrl());
+    ServiceLocator provideServiceLocator(DockerSupport dockerSupport) {
+        return new DockerServiceLocator(dockerSupport);
+    }
+
+    @Provides
+    @Singleton
+    DockerImageBuilder provideDockerImageBuilder(ApplicationConfig applicationConfig, DockerConfig dockerConfig, DockerClient dockerClient, GitDockerFileProjectFetcher dockerFileProjectFetcher, ServiceLocator serviceLocator) {
+        DockerClientDockerImageBuilder dockerClientDockerImageBuilder = new DockerClientDockerImageBuilder(dockerClient, new File(applicationConfig.dockerImageBuildDir()), dockerFileProjectFetcher, serviceLocator);
         return dockerClientDockerImageBuilder;
     }
 
