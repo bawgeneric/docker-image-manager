@@ -27,6 +27,7 @@ import akka.actor.ActorRef;
 import akka.japi.pf.ReceiveBuilder;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
 import io.kodokojo.docker.model.DockerFileBuildRequest;
+import io.kodokojo.docker.model.DockerFileBuildResponse;
 import io.kodokojo.docker.model.RegistryEvent;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
 import org.slf4j.Logger;
@@ -56,13 +57,14 @@ public class DependencyDockerfileUpdateDispatcher extends AbstractActor {
                     DockerFileBuildRequest dockerFileBuildRequest = new DockerFileBuildRequest(child.getDockerFile(),  child.getDockerFileScmEntry());
                     Date now = new Date();
                     child.setLastUpdateDate(now);
-                    child.setLaunchBuildDate(now);
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Request Build of Docker Image {}", child.getDockerFile().getImageName().getFullyQualifiedName());
                     }
                     dockerImageBuilder.tell(dockerFileBuildRequest, self());
                 }
             }
-        }).build());
+        })
+                .match(DockerFileBuildResponse.class, this.dockerFileBuildOrchestrator::receiveDockerBuildResponse)
+                .build());
     }
 }

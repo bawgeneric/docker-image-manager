@@ -22,9 +22,7 @@ package io.kodokojo.docker.service.back;
  * #L%
  */
 
-import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.docker.model.ImageName;
-import io.kodokojo.docker.model.RegistryEvent;
+import io.kodokojo.docker.model.*;
 
 public interface DockerFileBuildOrchestrator {
 
@@ -37,4 +35,7 @@ public interface DockerFileBuildOrchestrator {
 
     DockerFileBuildPlan getBuildPlan(ImageName imageName);
 
+    void receiveDockerBuildRequest(DockerFileBuildRequest dockerFileBuildRequest);
+
+    void receiveDockerBuildResponse(DockerFileBuildResponse dockerFileBuildResponse);
 }

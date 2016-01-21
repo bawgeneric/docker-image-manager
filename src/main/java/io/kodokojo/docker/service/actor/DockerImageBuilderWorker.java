@@ -23,9 +23,11 @@ package io.kodokojo.docker.service.actor;
  */
 
 import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
 import akka.japi.pf.ReceiveBuilder;
 import io.kodokojo.docker.model.DockerFileBuildRequest;
 import io.kodokojo.docker.model.ImageName;
+import io.kodokojo.docker.service.back.build.AbstractBuildRequestDockerImageBuildCallback;
 import io.kodokojo.docker.service.back.build.DockerImageBuildCallback;
 import io.kodokojo.docker.service.back.build.DockerImageBuilder;
 import org.slf4j.Logger;
@@ -40,56 +42,55 @@ public class DockerImageBuilderWorker extends AbstractActor {
     public DockerImageBuilderWorker(DockerImageBuilder dockerImageBuilder) {
         receive(ReceiveBuilder.match(DockerFileBuildRequest.class, dockerFileBuildRequest -> {
 
-            dockerImageBuilder.build(dockerFileBuildRequest, new WorkerDockerImageBuildCallback(dockerFileBuildRequest.getDockerFile().getImageName()));
+            dockerImageBuilder.build(dockerFileBuildRequest, new WorkerDockerImageBuildCallback(dockerFileBuildRequest));
 
         }).matchAny(this::unhandled).build());
     }
 
-    private class WorkerDockerImageBuildCallback implements DockerImageBuildCallback {
+    private class WorkerDockerImageBuildCallback extends AbstractBuildRequestDockerImageBuildCallback {
 
         private ImageName buildImageName;
 
-        private WorkerDockerImageBuildCallback(ImageName buildImageName) {
-            this.buildImageName = buildImageName;
+        private WorkerDockerImageBuildCallback( DockerFileBuildRequest dockerFileBuildRequest) {
+            super(dockerFileBuildRequest);
+            this.buildImageName = dockerFileBuildRequest.getDockerFile().getImageName();
         }
 
         @Override
         public void fromImagePulled(ImageName imageName) {
             LOGGER.info("ImageName {} Pulled.", imageName.getFullyQualifiedName());
+
         }
 
         @Override
         public void buildBegin(Date beginDate) {
             LOGGER.info("Build of image {} start", buildImageName.getFullyQualifiedName());
+            super.buildBegin(beginDate);
         }
 
         @Override
         public void buildSuccess(Date endDate) {
             LOGGER.info("Build of image {} SUCCESS", buildImageName.getFullyQualifiedName());
-
+            super.buildSuccess(endDate);
         }
 
         @Override
         public void pushToRepositoryBegin(String repository, Date begin) {
-
+            LOGGER.info("{} - Push image {} begin", begin, repository);
         }
 
         @Override
         public void pushToRepositoryEnd(String repository, Date begin) {
-
+            LOGGER.info("{} - Push image {} ended", begin, repository);
         }
 
         @Override
         public void buildFailed(String reason, Date failDate) {
             LOGGER.info("Build of image {} FAILED : {}", buildImageName.getFullyQualifiedName(), reason);
-
+            super.buildFailed(reason,failDate);
+            sender().tell(dockerFileBuildResponseBuilder.build(), self());
         }
 
-        @Override
-        public void appendOutput(String output) {
-            LOGGER.info("Build of image {} in progress :{}", buildImageName.getFullyQualifiedName(), output);
-
-        }
     }
 
 }

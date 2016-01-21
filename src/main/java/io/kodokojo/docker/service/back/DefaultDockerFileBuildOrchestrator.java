@@ -22,10 +22,7 @@ package io.kodokojo.docker.service.back;
  * #L%
  */
 
-import io.kodokojo.docker.model.DockerFile;
-import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.docker.model.ImageName;
-import io.kodokojo.docker.model.RegistryEvent;
+import io.kodokojo.docker.model.*;
 import io.kodokojo.docker.service.DockerFileRepository;
 import io.kodokojo.docker.service.connector.DockerFileSource;
 import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
@@ -143,6 +140,58 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
             return res;
         } finally {
             readLock.unlock();
+        }
+    }
+
+    @Override
+    public void receiveDockerBuildRequest(DockerFileBuildRequest dockerFileBuildRequest) {
+        if (dockerFileBuildRequest == null) {
+            throw new IllegalArgumentException("dockerFileBuildRequest must be defined.");
+        }
+        throw new UnsupportedOperationException("Not yet coded, sorry.");
+    }
+
+    @Override
+    public void receiveDockerBuildResponse(DockerFileBuildResponse dockerFileBuildResponse) {
+        if (dockerFileBuildResponse == null) {
+            throw new IllegalArgumentException("dockerFileBuildResponse must be defined.");
+        }
+        writeLock.lock();
+        try {
+            DockerFileBuildRequest dockerFileBuildRequest = dockerFileBuildResponse.getDockerFileBuildRequest();
+            DockerFile dockerFile = dockerFileBuildRequest.getDockerFile();
+            ImageName from = dockerFile.getFrom();
+            DockerFileBuildPlan dockerFileBuildPlan = null;
+            DockerFileBuildPlan dockerFileBuildPlanFrom = buildPlan.get(from);
+            if (dockerFileBuildPlanFrom != null) {
+                Iterator<DockerFileBuildPlan> iterator = dockerFileBuildPlanFrom.getChildren().iterator();
+                while (dockerFileBuildPlan == null && iterator.hasNext()) {
+                    DockerFileBuildPlan current = iterator.next();
+                    if (current.getDockerFile().equals(dockerFile)) {
+                        dockerFileBuildPlan = current;
+                    }
+                }
+            }
+
+            ImageName imageName = dockerFile.getImageName();
+            if (dockerFileBuildPlan == null) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Unable to find a child DockerBuildPlan for image {}; lookup in buildPlan repository.", imageName);
+                }
+                dockerFileBuildPlan = buildPlan.get(imageName);
+            }
+
+            if (dockerFileBuildPlan == null) {
+                throw new IllegalStateException("We don't have any build plan for image " + imageName.getFullyQualifiedName() + ".");
+            }
+            dockerFileBuildPlan.setDockerFileBuildResponse(dockerFileBuildResponse);
+            dockerFileBuildPlan.setLastUpdateDate(dockerFileBuildResponse.getLastUpdateDate());
+            if (dockerFileBuildPlanFrom != null) {
+                dockerFileBuildPlanFrom.setLastUpdateDate(dockerFileBuildResponse.getLastUpdateDate());
+            }
+
+        } finally {
+            writeLock.unlock();
         }
     }
 

@@ -33,7 +33,7 @@ public interface DockerImageBuildCallback {
 
     void buildBegin(Date beginDate);
 
-
+    void appendOutput(String output);
 
     void buildSuccess(Date endDate);
 
@@ -42,7 +42,5 @@ public interface DockerImageBuildCallback {
     void pushToRepositoryEnd(String repository, Date begin);
 
     void buildFailed(String reason, Date failDate);
-
-    void appendOutput(String output);
 
 }

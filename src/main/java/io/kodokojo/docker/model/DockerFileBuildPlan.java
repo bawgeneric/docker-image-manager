@@ -37,11 +37,9 @@ public class DockerFileBuildPlan {
 
     private final GitDockerFileScmEntry dockerFileScmEntry;
 
-    private Date launchBuildDate;
-
-    private Date buildDate;
-
     private Date lastUpdateDate;
+
+    private DockerFileBuildResponse dockerFileBuildResponse;
 
     public DockerFileBuildPlan(DockerFile dockerFile, Set<DockerFileBuildPlan> children,GitDockerFileScmEntry dockerFileScmEntry, Date lastUpdateDate) {
         if (dockerFile == null) {
@@ -61,7 +59,6 @@ public class DockerFileBuildPlan {
         this.children = children;
         this.dockerFileScmEntry =  dockerFileScmEntry;
         this.lastUpdateDate = null;
-        this.buildDate = null;
         this.lastUpdateDate = lastUpdateDate;
     }
 
@@ -71,24 +68,16 @@ public class DockerFileBuildPlan {
         }
     }
 
-    public Date getLaunchBuildDate() {
-        return launchBuildDate;
-    }
-
-    public void setLaunchBuildDate(Date launchBuildDate) {
-        this.launchBuildDate = launchBuildDate;
-    }
-
-    public Date getBuildDate() {
-        return buildDate;
-    }
-
-    public void setBuildDate(Date buildDate) {
-        this.buildDate = buildDate;
-    }
-
     public Date getLastUpdateDate() {
         return lastUpdateDate;
+    }
+
+    public DockerFileBuildResponse getDockerFileBuildResponse() {
+        return dockerFileBuildResponse;
+    }
+
+    public void setDockerFileBuildResponse(DockerFileBuildResponse dockerFileBuildResponse) {
+        this.dockerFileBuildResponse = dockerFileBuildResponse;
     }
 
     public DockerFile getDockerFile() {
@@ -125,9 +114,8 @@ public class DockerFileBuildPlan {
                 "dockerFile=" + dockerFile +
                 ", children=" + children +
                 ", dockerFileScmEntry=" + dockerFileScmEntry +
-                ", launchBuildDate=" + launchBuildDate +
-                ", buildDate=" + buildDate +
                 ", lastUpdateDate=" + lastUpdateDate +
+                ", dockerFileBuildResponse=" + dockerFileBuildResponse +
                 '}';
     }
 }
