@@ -51,6 +51,8 @@ public class RegistryRequestWorker extends AbstractActor {
 
     public static final String REPOSITORY = "repository";
 
+    public static final String URL = "url";
+
     public static final String EVENTS = "events";
 
     public static final String ACTION = "action";
@@ -69,11 +71,18 @@ public class RegistryRequestWorker extends AbstractActor {
 
                     for (JsonElement eventElement : events) {
                         JsonObject jsObjEvent = eventElement.getAsJsonObject();
-                        String action = jsObjEvent.getAsJsonPrimitive(ACTION).getAsString();
                         RegistryEvent registryEvent = PUSH_EVENT_FUNCTION.apply(jsObjEvent);
-                        sender().tell(registryEvent, self());
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("Receive a {} action", action);
+                        if (registryEvent.getMethod().equals(RegistryEvent.EventMethod.PUT)
+                                && registryEvent.getType().equals(RegistryEvent.EventType.PUSH)
+                                && registryEvent.getUrl().contains(registryEvent.getImage().getName().getShortNameWithoutTag() + "/manifests/")) {
+
+                            sender().tell(registryEvent, self());
+
+                            if (LOGGER.isDebugEnabled()) {
+                                LOGGER.debug("Receive a registry event which may start a build: {}", registryEvent);
+                            }
+                        } else if (LOGGER.isDebugEnabled()){
+                            LOGGER.debug("The following registryEvent is ignored :{}", registryEvent);
                         }
 
                     }
@@ -87,13 +96,14 @@ public class RegistryRequestWorker extends AbstractActor {
         String digest = target.getAsJsonPrimitive(DIGEST).getAsString();
         RegistryEvent.EventType eventType = RegistryEvent.EventType.valueOf(event.getAsJsonPrimitive(ACTION).getAsString().toUpperCase());
 
+        String url = target.getAsJsonPrimitive(URL).getAsString();
         JsonObject request = event.getAsJsonObject(REQUEST);
         RegistryEvent.EventMethod method = RegistryEvent.EventMethod.valueOf(request.getAsJsonPrimitive(METHOD).getAsString().toUpperCase());
 
 
         Layer layer = new Layer(digest, size);
         ImageName name = new StringToImageNameConverter().apply(target.getAsJsonPrimitive(REPOSITORY).getAsString());
-        return new RegistryEvent(new Date(), eventType, method, null, new Image(name, new ArrayList<>()), layer);
+        return new RegistryEvent(new Date(), eventType, method, null, new Image(name, new ArrayList<>()), layer, url);
     };
 
 }

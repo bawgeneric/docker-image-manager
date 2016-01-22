@@ -22,6 +22,8 @@ package io.kodokojo.docker.service.back;
  * #L%
  */
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.kodokojo.docker.model.*;
 import io.kodokojo.docker.service.DockerFileRepository;
 import io.kodokojo.docker.service.connector.DockerFileSource;
@@ -92,14 +94,15 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
                 }
             }
             DockerFileBuildPlan created = create(current, registryEvent.getTimestamp());
-            if (CollectionUtils.isNotEmpty(created.getChildren())) {
+            if (CollectionUtils.isNotEmpty(created.getChildren().keySet())) {
                 writeLock.lock();
                 try {
                     dockerFileBuildPlan = buildPlan.get(imageName);
                     //  Check DockerBuildPLan not already Added since the read check had been unlocked.
                     if (dockerFileBuildPlan == null) {
                         buildPlan.put(imageName, created);
-                        return dockerFileBuildPlan;
+                        created.setLastUpdateDate(new Date());
+                        return created;
                     }
                 } finally {
                     writeLock.unlock();
@@ -116,14 +119,14 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
         try {
             dockerFileBuildPlan = buildPlan.get(imageName);
             if (dockerFileBuildPlan != null) {
+            //  DockerBuildPlan already exist, update the last date for update.
                 dockerFileBuildPlan.setLastUpdateDate(registryEvent.getTimestamp());
             }
         } finally {
             readLock.unlock();
         }
-        //  DockerBuildPlan already exist, update the last date for update.
 
-        return dockerFileBuildPlan;
+        return null;
     }
 
     @Override
@@ -161,17 +164,8 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
             DockerFileBuildRequest dockerFileBuildRequest = dockerFileBuildResponse.getDockerFileBuildRequest();
             DockerFile dockerFile = dockerFileBuildRequest.getDockerFile();
             ImageName from = dockerFile.getFrom();
-            DockerFileBuildPlan dockerFileBuildPlan = null;
-            DockerFileBuildPlan dockerFileBuildPlanFrom = buildPlan.get(from);
-            if (dockerFileBuildPlanFrom != null) {
-                Iterator<DockerFileBuildPlan> iterator = dockerFileBuildPlanFrom.getChildren().iterator();
-                while (dockerFileBuildPlan == null && iterator.hasNext()) {
-                    DockerFileBuildPlan current = iterator.next();
-                    if (current.getDockerFile().equals(dockerFile)) {
-                        dockerFileBuildPlan = current;
-                    }
-                }
-            }
+            DockerFileBuildPlan dockerFileBuildPlan= buildPlan.get(from);
+
 
             ImageName imageName = dockerFile.getImageName();
             if (dockerFileBuildPlan == null) {
@@ -179,16 +173,17 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
                     LOGGER.debug("Unable to find a child DockerBuildPlan for image {}; lookup in buildPlan repository.", imageName);
                 }
                 dockerFileBuildPlan = buildPlan.get(imageName);
+                if (dockerFileBuildPlan != null) {
+                    dockerFileBuildPlan.setDockerFileBuildResponse(dockerFileBuildResponse);
+                }
+
             }
 
             if (dockerFileBuildPlan == null) {
                 throw new IllegalStateException("We don't have any build plan for image " + imageName.getFullyQualifiedName() + ".");
             }
-            dockerFileBuildPlan.setDockerFileBuildResponse(dockerFileBuildResponse);
+            dockerFileBuildPlan.getChildren().put(dockerFileBuildResponse.getDockerFileBuildRequest(), dockerFileBuildResponse);
             dockerFileBuildPlan.setLastUpdateDate(dockerFileBuildResponse.getLastUpdateDate());
-            if (dockerFileBuildPlanFrom != null) {
-                dockerFileBuildPlanFrom.setLastUpdateDate(dockerFileBuildResponse.getLastUpdateDate());
-            }
 
         } finally {
             writeLock.unlock();
@@ -197,15 +192,16 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
 
     private DockerFileBuildPlan create(DockerFile current, Date timestamp) {
         Set<DockerFile> dockerFileChildOf = dockerFileRepository.getDockerFileChildOf(current);
-        Set<DockerFileBuildPlan> children = new HashSet<>();
+        Map<DockerFileBuildRequest, DockerFileBuildResponse> children = new HashMap<>();
         if (CollectionUtils.isNotEmpty(dockerFileChildOf)) {
-            List<DockerFileBuildPlan> createdChildren = dockerFileChildOf.stream().map(dockerFileChild -> create(dockerFileChild, timestamp)).collect(Collectors.toList());
-            children.addAll(createdChildren);
+            List<DockerFileBuildRequest> createdChildren = dockerFileChildOf.stream().map(dockerFileChild -> new DockerFileBuildRequest(dockerFileChild, dockerFileSource.getDockerFileScmEntry(dockerFileChild.getImageName()))).collect(Collectors.toList());
+            createdChildren.forEach(child -> children.put(child, null));
         }
         GitDockerFileScmEntry dockerFileScmEntry = dockerFileSource.getDockerFileScmEntry(current.getImageName());
         DockerFileBuildPlan res = new DockerFileBuildPlan(current, children, dockerFileScmEntry, timestamp);
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Create following DockerBuildPlan for image {} : {}", current.getImageName().getFullyQualifiedName(), res);
+            Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
+            LOGGER.trace("Create following DockerBuildPlan for image {} : {}", current.getImageName().getFullyQualifiedName(), gson.toJson(res));
         }
         return res;
 

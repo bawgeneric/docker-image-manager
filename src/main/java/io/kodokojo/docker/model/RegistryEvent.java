@@ -49,15 +49,16 @@ public class RegistryEvent {
 
     private final Layer specificLayer;
 
+    private final String url;
 
-
-    public RegistryEvent(Date timestamp, EventType type,EventMethod method,  String actor, Image image, Layer specificLayer) {
+    public RegistryEvent(Date timestamp, EventType type,EventMethod method,  String actor, Image image, Layer specificLayer, String url) {
         this.timestamp = timestamp;
         this.type = type;
         this.method = method;
         this.actor = actor;
         this.image = image;
         this.specificLayer = specificLayer;
+        this.url = url;
     }
 
     public Date getTimestamp() {
@@ -84,15 +85,20 @@ public class RegistryEvent {
         return specificLayer;
     }
 
+    public String getUrl() {
+        return url;
+    }
+
     @Override
     public String toString() {
         return "RegistryEvent{" +
                 "timestamp=" + timestamp +
-                ", image=" + image +
                 ", type=" + type +
-                ", method=" + method +
                 ", actor='" + actor + '\'' +
+                ", method=" + method +
+                ", image=" + image +
                 ", specificLayer=" + specificLayer +
+                ", url='" + url + '\'' +
                 '}';
     }
 }

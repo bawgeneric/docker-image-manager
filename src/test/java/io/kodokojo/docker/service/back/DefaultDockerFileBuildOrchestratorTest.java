@@ -56,7 +56,7 @@ public class DefaultDockerFileBuildOrchestratorTest {
 
         Image image = new Image(StringToImageNameConverter.convert("jpthiery/busybox"), new ArrayList<>());
         Layer layer = new Layer("sha1:123456", 42);
-        RegistryEvent registryEvent = new RegistryEvent(new Date(), RegistryEvent.EventType.PUSH, RegistryEvent.EventMethod.PUT, null, image, layer);
+        RegistryEvent registryEvent = new RegistryEvent(new Date(), RegistryEvent.EventType.PUSH, RegistryEvent.EventMethod.PUT, null, image, layer, "");
         DockerFileBuildPlan res = orchestrator.receiveUpdateEvent(registryEvent);
 
         assertThat(res).isNotNull();

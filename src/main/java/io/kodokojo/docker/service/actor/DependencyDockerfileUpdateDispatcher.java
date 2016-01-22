@@ -25,6 +25,8 @@ package io.kodokojo.docker.service.actor;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.japi.pf.ReceiveBuilder;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
 import io.kodokojo.docker.model.DockerFileBuildRequest;
 import io.kodokojo.docker.model.DockerFileBuildResponse;
@@ -52,15 +54,15 @@ public class DependencyDockerfileUpdateDispatcher extends AbstractActor {
         receive(ReceiveBuilder.match(RegistryEvent.class, push -> {
             DockerFileBuildPlan dockerFileBuildPlan = this.dockerFileBuildOrchestrator.receiveUpdateEvent(push);
             if (dockerFileBuildPlan != null) {
-                LOGGER.info("Adding new DockerFileBuildPlan {}", dockerFileBuildPlan);
-                for (DockerFileBuildPlan child : dockerFileBuildPlan.getChildren()) {
-                    DockerFileBuildRequest dockerFileBuildRequest = new DockerFileBuildRequest(child.getDockerFile(),  child.getDockerFileScmEntry());
-                    Date now = new Date();
-                    child.setLastUpdateDate(now);
+                if (LOGGER.isDebugEnabled()){
+                    Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
+                    LOGGER.debug("DockerFileBuildPlan Added {}", gson.toJson(dockerFileBuildPlan));
+                }
+                for (DockerFileBuildRequest child : dockerFileBuildPlan.getChildren().keySet()) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Request Build of Docker Image {}", child.getDockerFile().getImageName().getFullyQualifiedName());
                     }
-                    dockerImageBuilder.tell(dockerFileBuildRequest, self());
+                    dockerImageBuilder.tell(child, self());
                 }
             }
         })

@@ -25,15 +25,13 @@ package io.kodokojo.docker.model;
 
 import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class DockerFileBuildPlan {
 
     private final DockerFile dockerFile;
 
-    private final Set<DockerFileBuildPlan> children;
+    private final Map<DockerFileBuildRequest, DockerFileBuildResponse> children;
 
     private final GitDockerFileScmEntry dockerFileScmEntry;
 
@@ -41,7 +39,7 @@ public class DockerFileBuildPlan {
 
     private DockerFileBuildResponse dockerFileBuildResponse;
 
-    public DockerFileBuildPlan(DockerFile dockerFile, Set<DockerFileBuildPlan> children,GitDockerFileScmEntry dockerFileScmEntry, Date lastUpdateDate) {
+    public DockerFileBuildPlan(DockerFile dockerFile, Map<DockerFileBuildRequest, DockerFileBuildResponse> children,GitDockerFileScmEntry dockerFileScmEntry, Date lastUpdateDate) {
         if (dockerFile == null) {
             throw new IllegalArgumentException("dockerFile must be defined.");
         }
@@ -88,8 +86,8 @@ public class DockerFileBuildPlan {
         return dockerFileScmEntry;
     }
 
-    public Set<DockerFileBuildPlan> getChildren() {
-        return new HashSet<>(children);
+    public Map<DockerFileBuildRequest, DockerFileBuildResponse> getChildren() {
+        return new HashMap<>(children);
     }
 
     @Override

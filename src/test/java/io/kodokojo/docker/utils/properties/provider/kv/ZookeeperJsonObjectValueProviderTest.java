@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -72,7 +73,7 @@ public class ZookeeperJsonObjectValueProviderTest {
             }
 
             exists = zooKeeper.exists("/maconfig/keyA", false);
-            Set<DockerFileBuildPlan> children = new HashSet<>();
+            HashMap<DockerFileBuildRequest,DockerFileBuildResponse> children = new HashMap();
             DockerFile dockerFile = new DockerFile(imageName);
             GitDockerFileScmEntry dockerFileScmEntry = new GitDockerFileScmEntry(imageName,"git://github.com/kodokojo/acme", "HEAD", "dockerfiles/busybox");
 

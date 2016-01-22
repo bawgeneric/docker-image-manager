@@ -201,7 +201,6 @@ public class DockerCommonsGiven extends Stage<DockerCommonsGiven> {
             String configPath = f.getAbsolutePath();
             createContainerCmd = createContainerCmd.withLinks(new Link(containerId, "dockerimagemanager"))
                     .withBinds(new Bind(configPath, new Volume("/etc/docker/registry/config.yml")));
-
         }
         CreateContainerResponse registryCmd = createContainerCmd
                 .exec();

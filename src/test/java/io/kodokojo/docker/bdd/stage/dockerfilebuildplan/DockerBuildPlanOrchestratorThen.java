@@ -63,8 +63,10 @@ public class DockerBuildPlanOrchestratorThen<SELF extends DockerBuildPlanOrchest
         DockerFileBuildPlan dockerFileBuildPlan = restEntryPoint.getDockerFileBuildPlan(imageName.getNamespace(), imageName.getName(), imageName.getTag());
         assertThat(dockerFileBuildPlan).isNotNull();
 
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        Attachment attachment = Attachment.plainText(gson.toJson(dockerFileBuildPlan)).withTitle("DockerBuildPlan for " +imageName.getFullyQualifiedName()).withFileName("dokcerbuildfile.json");
+        Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
+        String content = gson.toJson(dockerFileBuildPlan);
+        System.out.println(content);
+        Attachment attachment = Attachment.plainText(content).withTitle("DockerBuildPlan for " +imageName.getFullyQualifiedName()).withFileName("dokcerbuildfile.json");
         //Attachment attachment = Attachment.json(gson.toJson(dockerFileBuildPlan)).withTitle("DockerBuildPlan for " +imageName.getFullyQualifiedName()).withFileName("dokcerbuildfile.json");
         currentStep.addAttachment(attachment);
 
