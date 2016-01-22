@@ -23,8 +23,8 @@ package io.kodokojo.docker.config;
  */
 
 
-import io.kodokojo.docker.utils.properties.Key;
-import io.kodokojo.docker.utils.properties.PropertyConfig;
+import io.kodokojo.commons.utils.properties.Key;
+import io.kodokojo.commons.utils.properties.PropertyConfig;
 
 public interface GitBashbrewConfig extends PropertyConfig {
 

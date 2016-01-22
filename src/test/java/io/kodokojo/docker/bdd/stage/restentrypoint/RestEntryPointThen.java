@@ -25,10 +25,10 @@ package io.kodokojo.docker.bdd.stage.restentrypoint;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
 import com.tngtech.jgiven.annotation.Quoted;
 import io.kodokojo.docker.bdd.stage.AbstractRestStage;
-import io.kodokojo.docker.bdd.stage.docker.DockerCommonsGiven;
-import io.kodokojo.docker.model.DockerFile;
-import io.kodokojo.docker.model.ImageName;
-import io.kodokojo.docker.model.StringToImageNameConverter;
+import io.kodokojo.commons.bdd.stage.docker.DockerCommonsGiven;
+import io.kodokojo.commons.model.DockerFile;
+import io.kodokojo.commons.model.ImageName;
+import io.kodokojo.commons.model.StringToImageNameConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

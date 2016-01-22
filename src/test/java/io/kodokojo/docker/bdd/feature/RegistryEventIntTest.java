@@ -24,12 +24,12 @@ package io.kodokojo.docker.bdd.feature;
 
 import com.tngtech.jgiven.annotation.As;
 import com.tngtech.jgiven.junit.ScenarioTest;
-import io.kodokojo.docker.DockerIsRequire;
-import io.kodokojo.docker.DockerPresentMethodRule;
+import io.kodokojo.commons.DockerIsRequire;
+import io.kodokojo.commons.DockerPresentMethodRule;
 import io.kodokojo.docker.bdd.Registry;
-import io.kodokojo.docker.bdd.stage.docker.DockerCommonsGiven;
-import io.kodokojo.docker.bdd.stage.docker.DockerCommonsWhen;
-import io.kodokojo.docker.bdd.stage.docker.DockerRegistryThen;
+import io.kodokojo.commons.bdd.stage.docker.DockerCommonsGiven;
+import io.kodokojo.commons.bdd.stage.docker.DockerCommonsWhen;
+import io.kodokojo.commons.bdd.stage.docker.DockerRegistryThen;
 import io.kodokojo.docker.bdd.stage.dockerfilebuildplan.DockerBuildPlanOrchestratorThen;
 import io.kodokojo.docker.bdd.stage.restentrypoint.RestEntryPointThen;
 import org.junit.Rule;

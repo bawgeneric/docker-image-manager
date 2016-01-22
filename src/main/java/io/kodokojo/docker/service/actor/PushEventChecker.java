@@ -24,14 +24,14 @@ package io.kodokojo.docker.service.actor;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
-import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.google.inject.Inject;
-import io.kodokojo.docker.model.ImageName;
+import io.kodokojo.commons.model.ImageName;
 import io.kodokojo.docker.model.RegistryEvent;
 import io.kodokojo.docker.service.DockerImageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
 
 public class PushEventChecker extends AbstractActor {
 
@@ -52,7 +52,7 @@ public class PushEventChecker extends AbstractActor {
                     if (!alreadyExist) {
                         dependencyDockerfileUpdateDispatcher.tell(event, self());
                     } else if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Receive a push event for docker image {} which already exist.", name.getFullyQualifiedName());
+                        LOGGER.debug("Receive a push event for commons image {} which already exist.", name.getFullyQualifiedName());
                     }
                 }
         ).matchAny(this::unhandled).build());

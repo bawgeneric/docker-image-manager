@@ -22,7 +22,8 @@ package io.kodokojo.docker.model;
  * #L%
  */
 
-import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
+import io.kodokojo.commons.model.DockerFile;
+import io.kodokojo.commons.docker.fetcher.git.GitDockerFileScmEntry;
 
 public class DockerFileBuildRequest {
 

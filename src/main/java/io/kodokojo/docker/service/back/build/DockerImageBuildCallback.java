@@ -22,8 +22,7 @@ package io.kodokojo.docker.service.back.build;
  * #L%
  */
 
-import io.kodokojo.docker.model.Image;
-import io.kodokojo.docker.model.ImageName;
+import io.kodokojo.commons.model.ImageName;
 
 import java.util.Date;
 

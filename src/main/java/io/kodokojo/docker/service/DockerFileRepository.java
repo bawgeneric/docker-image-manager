@@ -22,11 +22,10 @@ package io.kodokojo.docker.service;
  * #L%
  */
 
-import io.kodokojo.docker.model.DockerFile;
-import io.kodokojo.docker.model.ImageName;
+import io.kodokojo.commons.model.DockerFile;
+import io.kodokojo.commons.model.ImageName;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 public interface DockerFileRepository {

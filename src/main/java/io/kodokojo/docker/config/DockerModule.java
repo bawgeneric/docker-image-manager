@@ -23,13 +23,11 @@ package io.kodokojo.docker.config;
  */
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import io.kodokojo.docker.utils.docker.DockerSupport;
-import org.apache.commons.lang.StringUtils;
+import io.kodokojo.commons.config.DockerConfig;
+import io.kodokojo.commons.utils.docker.DockerSupport;
 
 public class DockerModule extends AbstractModule {
     @Override

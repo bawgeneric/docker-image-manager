@@ -24,10 +24,14 @@ package io.kodokojo.docker.service.back;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.kodokojo.docker.model.*;
+import io.kodokojo.commons.model.*;
+import io.kodokojo.docker.model.DockerFileBuildPlan;
+import io.kodokojo.docker.model.DockerFileBuildRequest;
 import io.kodokojo.docker.service.DockerFileRepository;
-import io.kodokojo.docker.service.connector.DockerFileSource;
-import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
+import io.kodokojo.commons.docker.fetcher.DockerFileSource;
+import io.kodokojo.commons.docker.fetcher.git.GitDockerFileScmEntry;
+import io.kodokojo.docker.model.DockerFileBuildResponse;
+import io.kodokojo.docker.model.RegistryEvent;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

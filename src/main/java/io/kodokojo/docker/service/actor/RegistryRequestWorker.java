@@ -29,7 +29,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.inject.Inject;
-import io.kodokojo.docker.model.*;
+import io.kodokojo.commons.model.*;
+import io.kodokojo.docker.model.Image;
+import io.kodokojo.docker.model.Layer;
+import io.kodokojo.docker.model.RegistryEvent;
+import io.kodokojo.docker.model.RestRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

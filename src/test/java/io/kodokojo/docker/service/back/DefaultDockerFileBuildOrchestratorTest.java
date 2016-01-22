@@ -22,11 +22,15 @@ package io.kodokojo.docker.service.back;
  * #L%
  */
 
-import io.kodokojo.docker.model.*;
+import io.kodokojo.commons.model.*;
+import io.kodokojo.docker.model.DockerFileBuildPlan;
+import io.kodokojo.docker.model.Image;
+import io.kodokojo.docker.model.Layer;
 import io.kodokojo.docker.service.DefaultDockerFileRepository;
 import io.kodokojo.docker.service.DockerFileRepository;
-import io.kodokojo.docker.service.connector.DockerFileSource;
-import io.kodokojo.docker.service.connector.git.GitDockerFileScmEntry;
+import io.kodokojo.commons.docker.fetcher.DockerFileSource;
+import io.kodokojo.commons.docker.fetcher.git.GitDockerFileScmEntry;
+import io.kodokojo.docker.model.RegistryEvent;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;

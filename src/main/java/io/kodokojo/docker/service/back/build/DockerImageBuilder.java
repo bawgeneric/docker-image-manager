@@ -22,7 +22,6 @@ package io.kodokojo.docker.service.back.build;
  * #L%
  */
 
-import io.kodokojo.docker.model.DockerFileBuildPlan;
 import io.kodokojo.docker.model.DockerFileBuildRequest;
 
 public interface DockerImageBuilder {

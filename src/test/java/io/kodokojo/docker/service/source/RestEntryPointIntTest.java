@@ -34,7 +34,7 @@ import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.kodokojo.docker.config.StandardServiceModule;
-import io.kodokojo.docker.utils.DockerClientSupport;
+import io.kodokojo.commons.utils.DockerClientSupport;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -75,7 +75,7 @@ public class RestEntryPointIntTest {
 
 
         CreateContainerResponse registryCmd = dockerClient.createContainerCmd("registry:2")
-                .withBinds(new Bind(configPath, new Volume("/etc/docker/registry/config.yml")))
+                .withBinds(new Bind(configPath, new Volume("/etc/commons/registry/config.yml")))
                 .withPortBindings(portBinding)
                 .exec();
         dockerClientSupport.addContainerIdToClean(registryCmd.getId());

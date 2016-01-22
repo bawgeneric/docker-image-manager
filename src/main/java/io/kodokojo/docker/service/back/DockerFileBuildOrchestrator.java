@@ -22,7 +22,11 @@ package io.kodokojo.docker.service.back;
  * #L%
  */
 
-import io.kodokojo.docker.model.*;
+import io.kodokojo.commons.model.*;
+import io.kodokojo.docker.model.DockerFileBuildPlan;
+import io.kodokojo.docker.model.DockerFileBuildRequest;
+import io.kodokojo.docker.model.DockerFileBuildResponse;
+import io.kodokojo.docker.model.RegistryEvent;
 
 public interface DockerFileBuildOrchestrator {
 

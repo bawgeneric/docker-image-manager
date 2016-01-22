@@ -22,33 +22,28 @@ package io.kodokojo.docker.config;
  * #L%
  */
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
 import com.github.dockerjava.api.DockerClient;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import io.kodokojo.commons.config.KodokojoConfig;
 import io.kodokojo.docker.service.DefaultDockerFileRepository;
 import io.kodokojo.docker.service.DefaultDockerImageRepository;
 import io.kodokojo.docker.service.DockerFileRepository;
 import io.kodokojo.docker.service.DockerImageRepository;
-import io.kodokojo.docker.service.actor.*;
 import io.kodokojo.docker.service.back.DefaultDockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.back.build.DockerClientDockerImageBuilder;
 import io.kodokojo.docker.service.back.build.DockerImageBuilder;
-import io.kodokojo.docker.service.connector.DockerFileSource;
-import io.kodokojo.docker.service.connector.git.GitBashbrewDockerFileSource;
-import io.kodokojo.docker.service.connector.git.GitDockerFileProjectFetcher;
-import io.kodokojo.docker.utils.docker.DockerSupport;
-import io.kodokojo.docker.utils.serviceLocator.Service;
-import io.kodokojo.docker.utils.serviceLocator.ServiceLocator;
-import io.kodokojo.docker.utils.serviceLocator.docker.DockerServiceLocator;
+import io.kodokojo.commons.docker.fetcher.DockerFileSource;
+import io.kodokojo.commons.docker.fetcher.git.GitBashbrewDockerFileSource;
+import io.kodokojo.commons.docker.fetcher.git.GitDockerFileProjectFetcher;
+import io.kodokojo.commons.utils.docker.DockerSupport;
+import io.kodokojo.commons.utils.serviceLocator.ServiceLocator;
+import io.kodokojo.commons.utils.serviceLocator.docker.DockerServiceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Named;
 import java.io.File;
 
 public class StandardServiceModule extends AbstractModule {

@@ -31,7 +31,7 @@
 
     <logger name="org.springframework" level="WARN"/>
 
-    <logger name="io.kodokojo.docker" level="TRACE"/>
+    <logger name="io.kodokojo.commons" level="TRACE"/>
     <logger name="retrofit" level="TRACE"/>
     <logger name="com.github.dockerjava.core.command.LogContainerResultCallback" level="DEBUG"/>
 

@@ -24,10 +24,14 @@ package io.kodokojo.docker;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import io.kodokojo.docker.config.*;
+import io.kodokojo.commons.config.*;
+import io.kodokojo.docker.config.ActorModule;
+import io.kodokojo.docker.config.StandardServiceModule;
 import io.kodokojo.docker.service.DockerFileRepository;
-import io.kodokojo.docker.service.connector.DockerFileSource;
+import io.kodokojo.commons.docker.fetcher.DockerFileSource;
 import io.kodokojo.docker.service.source.RestEntryPoint;
+import io.kodokojo.docker.config.DockerModule;
+import io.kodokojo.docker.config.PropertyModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +48,7 @@ public class Launcher {
         DockerFileRepository dockerFileRepository = injector.getInstance(DockerFileRepository.class);
         DockerFileSource dockerFileSource = injector.getInstance(DockerFileSource.class);
         LOGGER.info("Docker-image-manager for project '{}' on stack '{} {}' fetching Dockerfiles.");
+        dockerFileRepository.addAllDockerFile(dockerFileSource.fetchAllDockerFile());
         dockerFileRepository.addAllDockerFile(dockerFileSource.fetchAllDockerFile());
 
         entryPoint.start();

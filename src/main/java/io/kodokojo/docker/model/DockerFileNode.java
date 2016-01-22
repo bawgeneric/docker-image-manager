@@ -22,6 +22,8 @@ package io.kodokojo.docker.model;
  * #L%
  */
 
+import io.kodokojo.commons.model.DockerFile;
+
 import java.util.HashSet;
 import java.util.Set;
 

@@ -28,12 +28,11 @@ import com.tngtech.jgiven.CurrentStep;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
 import com.tngtech.jgiven.annotation.Quoted;
 import com.tngtech.jgiven.attachment.Attachment;
-import com.tngtech.jgiven.attachment.MediaType;
 import io.kodokojo.docker.bdd.stage.AbstractRestStage;
-import io.kodokojo.docker.bdd.stage.docker.DockerCommonsGiven;
+import io.kodokojo.commons.bdd.stage.docker.DockerCommonsGiven;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.docker.model.ImageName;
-import io.kodokojo.docker.model.StringToImageNameConverter;
+import io.kodokojo.commons.model.ImageName;
+import io.kodokojo.commons.model.StringToImageNameConverter;
 import retrofit.RetrofitError;
 
 import java.util.HashMap;

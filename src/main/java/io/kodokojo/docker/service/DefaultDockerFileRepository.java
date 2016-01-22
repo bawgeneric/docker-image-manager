@@ -22,8 +22,8 @@ package io.kodokojo.docker.service;
  * #L%
  */
 
-import io.kodokojo.docker.model.DockerFile;
-import io.kodokojo.docker.model.ImageName;
+import io.kodokojo.commons.model.DockerFile;
+import io.kodokojo.commons.model.ImageName;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

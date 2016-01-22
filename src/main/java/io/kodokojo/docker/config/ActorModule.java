@@ -29,16 +29,16 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.kodokojo.docker.service.DockerImageRepository;
-import io.kodokojo.docker.service.actor.*;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.back.build.DockerImageBuilder;
+import io.kodokojo.docker.service.actor.*;
 
 import javax.inject.Named;
 
 public class ActorModule extends AbstractModule {
     @Override
     protected void configure() {
-        bind(ActorSystem.class).toInstance(ActorSystem.apply("docker-image-manager"));
+        bind(ActorSystem.class).toInstance(ActorSystem.apply("commons-image-manager"));
     }
 
 
