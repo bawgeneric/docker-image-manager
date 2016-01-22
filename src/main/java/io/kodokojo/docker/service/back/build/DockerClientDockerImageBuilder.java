@@ -29,13 +29,13 @@ import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
-import io.kodokojo.commons.model.DockerFile;
-import io.kodokojo.docker.model.DockerFileBuildRequest;
-import io.kodokojo.commons.model.ImageName;
 import io.kodokojo.commons.docker.fetcher.DockerFileProjectFetcher;
 import io.kodokojo.commons.docker.fetcher.git.GitDockerFileScmEntry;
+import io.kodokojo.commons.model.DockerFile;
+import io.kodokojo.commons.model.ImageName;
 import io.kodokojo.commons.utils.serviceLocator.Service;
 import io.kodokojo.commons.utils.serviceLocator.ServiceLocator;
+import io.kodokojo.docker.model.DockerFileBuildRequest;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -88,6 +88,11 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
 
     @Override
     public void build(DockerFileBuildRequest dockerFileBuildRequest, DockerImageBuildCallback callback) {
+        build(dockerFileBuildRequest, callback, true);
+    }
+
+    @Override
+    public void build(DockerFileBuildRequest dockerFileBuildRequest, DockerImageBuildCallback callback, boolean push) {
         if (dockerFileBuildRequest == null) {
             throw new IllegalArgumentException("dockerFile must be defined.");
         }
@@ -97,116 +102,173 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Trying to Build DockerFileBuildRequest {}", dockerFileBuildRequest);
         }
+        DockerFile dockerFile = dockerFileBuildRequest.getDockerFile();
+        ImageName imageName = dockerFile.getImageName();
 
+        if ("scratch".equals(imageName.getName())) {
+            callback.buildFailed("we can't build image Scratch", new Date());
+        } else {
+            ImageName from = dockerFile.getFrom();
+            String path = String.format("/%s/%s/%s", imageName.getNamespace(), imageName.getName(), imageName.getTag());
+            File currentDir = new File(workDir.getAbsolutePath() + path);
+            if (!currentDir.exists()) {
+                currentDir.mkdirs();
+            }
+
+            GitDockerFileScmEntry dockerFileScmEntry = dockerFileBuildRequest.getDockerFileScmEntry();
+            File projectDir = dockerFileProjectFetcher.checkoutDockerFileProject(dockerFileScmEntry);
+            if (projectDir == null || !projectDir.canRead()) {
+                String message = String.format("Unable to read directory for project %s at following path '%s'", dockerFile.getImageName().getFullyQualifiedName(), projectDir.getAbsolutePath());
+                throw new IllegalStateException(message);
+            }
+            File dockerFileDirectory = new File(projectDir.getAbsolutePath() + File.separator + dockerFileScmEntry.getDockerFilePath());
+
+            boolean pulled = false;
+            try {
+                dockerClient.pullImageCmd(from.getShortName())
+                        .exec(new PullImageResultCallback())
+                        .awaitCompletion()
+                        .onComplete();
+                callback.fromImagePulled(from);
+                pulled = true;
+            } catch (InterruptedException e) {
+                String reason = String.format("Unable to pull image %s", from.getFullyQualifiedName());
+                LOGGER.error(reason, e);
+                callback.buildFailed(reason, new Date());
+            }
+
+            if (pulled) {
+                callback.buildBegin(new Date());
+                BuildImageResultCallback resultCallback = new BuildImageResultCallback() {
+                    @Override
+                    public void onNext(BuildResponseItem item) {
+                        callback.appendOutput(item.getStream());
+                        super.onNext(item);
+                    }
+                };
+                if (LOGGER.isTraceEnabled()) {
+                    File dockerFileFile = new File(dockerFileDirectory.getAbsolutePath() + File.separator + "Dockerfile");
+                    try {
+                        String content = FileUtils.readFileToString(dockerFileFile);
+                        LOGGER.trace("Trying to build image {} with following Dockerfile : \n{}\n", imageName.getFullyQualifiedName(), content);
+                    } catch (IOException e) {
+                        LOGGER.trace("Unable to read content of Dockerfile at following path " + dockerFileFile.getAbsolutePath());
+                    }
+                }
+                String imageId = null;
+                try {
+                    imageId = dockerClient.buildImageCmd(dockerFileDirectory).exec(resultCallback).awaitImageId();
+                } catch (DockerClientException e) {
+                    String message = "An error occurre while trying to build image " + imageName.getFullyQualifiedName() + ".";
+                    LOGGER.error(message, e);
+                    callback.buildFailed(message + " : " + e.getMessage(), new Date());
+                }
+                Date buildEnd = new Date();
+                if (isNotBlank(imageId)) {
+                    boolean res = false;
+                    if (push) {
+
+                        res = tagAndPushImage(imageName, imageId, callback);
+                    } else {
+                        res = tagImage(imageName, imageId, callback, false);
+                    }
+                    if (res) {
+                        Date now = new Date();
+                        callback.buildSuccess(now);
+                    }
+                } else {
+                    callback.buildFailed("Not able to build Docker image " + imageName.getFullyQualifiedName(), buildEnd);
+                }
+            }
+
+        }
+
+    }
+
+    private String getImageDockerCmdName(ImageName imageName, boolean push) {
+        String imageNameToRegistry = imageName.getShortName();
+
+        if (StringUtils.isNotBlank(imageName.getTag())) {
+            imageNameToRegistry = imageNameToRegistry.substring(0, (imageNameToRegistry.length() - (imageName.getTag().length() + 1)));
+        }
+        if (push) {
+            String registry = imageName.getRepository();
+            if (StringUtils.isBlank(registry)) {
+                registry = getRegistryUrl(registry);
+            }
+
+            if (isBlank(imageName.getRepository()) && isNotBlank(registry)) {
+                registry = registry.endsWith("/") ? registry : registry + "/";
+                imageNameToRegistry = registry + imageNameToRegistry;
+            }
+        }
+        return  imageNameToRegistry;
+    }
+
+    private String getRegistryUrl(String registry) {
         Set<Service> registryResults = serviceLocator.getServiceByName("registry");
         if (CollectionUtils.isNotEmpty(registryResults)) {
 
             Service service = registryResults.iterator().next();
-            String registry = service.getHost() + ":" + service.getPort();
+            registry = service.getHost() + ":" + service.getPort();
+        }
+        return registry;
+    }
 
-            DockerFile dockerFile = dockerFileBuildRequest.getDockerFile();
-            ImageName imageName = dockerFile.getImageName();
-            if ("scratch".equals(imageName.getName())) {
-                callback.buildFailed("we can't build image Scratch", new Date());
-            } else {
-                if ((isNotBlank(imageName.getRepository()) || isNotBlank(registry))) {
-                    ImageName from = dockerFile.getFrom();
-                    String path = String.format("/%s/%s/%s", imageName.getNamespace(), imageName.getName(), imageName.getTag());
-                    File currentDir = new File(workDir.getAbsolutePath() + path);
-                    if (!currentDir.exists()) {
-                        currentDir.mkdirs();
+    private boolean tagAndPushImage(ImageName imageName, String imageId, DockerImageBuildCallback callback) {
+        String imageNameToRegistry = getImageDockerCmdName(imageName, true);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Trying to tag imageId {} to {}", imageId, imageNameToRegistry);
+        }
+        String registry = imageName.getRepository();
+        if (StringUtils.isBlank(registry)) {
+            registry = getRegistryUrl(registry);
+        }
+
+        if (StringUtils.isBlank(registry) && StringUtils.isBlank(imageName.getRepository())) {
+            callback.buildFailed("No Registry available", new Date());
+        } else {
+
+
+            boolean tagged = tagImage(imageName, imageId, callback, true);
+            if (tagged) {
+                callback.pushToRepositoryBegin(imageName.getRepository(), new Date());
+                PushImageCmd pushImageCmd = dockerClient.pushImageCmd(imageNameToRegistry);
+
+                if (StringUtils.isNotBlank(imageName.getTag())) {
+                    pushImageCmd = pushImageCmd.withTag(imageName.getTag());
+                }
+                try {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Trying to push imageId {} to registry {}", imageId, imageNameToRegistry.replaceAll(":latest$", ""));
                     }
-
-                    GitDockerFileScmEntry dockerFileScmEntry = dockerFileBuildRequest.getDockerFileScmEntry();
-                    File projectDir = dockerFileProjectFetcher.checkoutDockerFileProject(dockerFileScmEntry);
-                    if (projectDir == null || !projectDir.canRead()) {
-                        String message = String.format("Unable to read directory for project %s at following path '%s'", dockerFile.getImageName().getFullyQualifiedName(), projectDir.getAbsolutePath());
-                        throw new IllegalStateException(message);
-                    }
-                    File dockerFileDirectory = new File(projectDir.getAbsolutePath() + File.separator + dockerFileScmEntry.getDockerFilePath());
-
-                    boolean pulled = false;
-                    try {
-                        dockerClient.pullImageCmd(from.getShortName())
-                                .exec(new PullImageResultCallback())
-                                .awaitCompletion()
-                                .onComplete();
-                        callback.fromImagePulled(from);
-                        pulled = true;
-                    } catch (InterruptedException e) {
-                        String reason = String.format("Unable to pull image %s", from.getFullyQualifiedName());
-                        LOGGER.error(reason, e);
-                        callback.buildFailed(reason, new Date());
-                    }
-
-                    if (pulled) {
-                        callback.buildBegin(new Date());
-                        BuildImageResultCallback resultCallback = new BuildImageResultCallback() {
-                            @Override
-                            public void onNext(BuildResponseItem item) {
-                                callback.appendOutput(item.getStream());
-                                super.onNext(item);
-                            }
-                        };
-                        if (LOGGER.isTraceEnabled()) {
-                            File dockerFileFile = new File(dockerFileDirectory.getAbsolutePath() + File.separator + "Dockerfile");
-                            try {
-                                String content = FileUtils.readFileToString(dockerFileFile);
-                                LOGGER.trace("Trying to build image {} with following Dockerfile : \n{}\n", imageName.getFullyQualifiedName(), content);
-                            } catch (IOException e) {
-                                LOGGER.trace("Unable to read content of Dockerfile at following path " + dockerFileFile.getAbsolutePath());
-                            }
-                        }
-
-                        try {
-
-                            String imageId = dockerClient.buildImageCmd(dockerFileDirectory).exec(resultCallback).awaitImageId();
-                            Date buildEnd = new Date();
-                            if (isNotBlank(imageId)) {
-                                String imageNameToRegistry = null;
-                                if (isBlank(imageName.getRepository())) {
-                                    registry = registry.endsWith("/") ? registry : registry + "/";
-                                    imageNameToRegistry = registry + imageName.getDockerImageName();
-                                } else {
-                                    imageNameToRegistry = imageName.getDockerImageName();
-                                }
-
-                                callback.pushToRepositoryBegin(imageName.getRepository(), new Date());
-                                if (LOGGER.isDebugEnabled()) {
-                                    LOGGER.debug("Trying to tag imageId {} to {}", imageId, imageNameToRegistry);
-                                }
-                                if (StringUtils.isNotBlank(imageName.getTag())) {
-                                    imageNameToRegistry = imageNameToRegistry.substring(0, (imageNameToRegistry.length() - (imageName.getTag().length() + 1)));
-                                }
-                                dockerClient.tagImageCmd(imageId, imageNameToRegistry, imageName.getTag() != null ? imageName.getTag() : "").withForce().exec();
-                                if (LOGGER.isDebugEnabled()) {
-                                    LOGGER.debug("Trying to push imageId {} to registry {}", imageId, imageNameToRegistry.replaceAll(":latest$", ""));
-                                }
-                                PushImageCmd pushImageCmd = dockerClient.pushImageCmd(imageNameToRegistry);
-                                if (StringUtils.isNotBlank(imageName.getTag())) {
-                                    pushImageCmd = pushImageCmd.withTag(imageName.getTag());
-                                }
-                                pushImageCmd.exec(new PushImageResultCallback()).awaitSuccess();
-                                Date now = new Date();
-                                callback.pushToRepositoryEnd(imageName.getRepository(), now);
-                                callback.buildSuccess(now);
-
-                            } else {
-                                callback.buildFailed("Not able to build Docker image " + imageName.getFullyQualifiedName(), buildEnd);
-                            }
-                        } catch (DockerClientException e) {
-                            String message = "An error occurre while trying to build image " + imageName.getFullyQualifiedName() + ".";
-                            LOGGER.error(message, e);
-                            callback.buildFailed(message + " : " + e.getMessage(), new Date());
-                        }
-                    }
-                } else {
-                    callback.buildFailed("Repository not defined for image " + imageName.getFullyQualifiedName(), new Date());
+                    pushImageCmd.exec(new PushImageResultCallback()).awaitSuccess();
+                    callback.pushToRepositoryEnd(imageName.getRepository(), new Date());
+                    return true;
+                } catch (DockerClientException e) {
+                    String message = "An error occure while trying to tag image " + imageName.getFullyQualifiedName() + ".";
+                    LOGGER.error(message, e);
+                    callback.buildFailed(message + " : " + e.getMessage(), new Date());
                 }
             }
-        } else {
-            callback.buildFailed("No Registry available", new Date());
         }
+        return false;
+    }
+
+    private boolean tagImage(ImageName imageName, String imageId, DockerImageBuildCallback callback, boolean push) {
+        String imageNameToRegistry = getImageDockerCmdName(imageName, push);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Trying to tag imageId {} to {}", imageId, imageNameToRegistry);
+        }
+        try {
+            dockerClient.tagImageCmd(imageId, imageNameToRegistry, imageName.getTag() != null ? imageName.getTag() : "").withForce().exec();
+        } catch (DockerClientException e) {
+            String message = "An error occurre while trying to tag image " + imageName.getFullyQualifiedName() + ".";
+            LOGGER.error(message, e);
+            callback.buildFailed(message + " : " + e.getMessage(), new Date());
+            return false;
+        }
+        return true;
     }
 
 }

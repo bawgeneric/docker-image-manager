@@ -28,4 +28,6 @@ public interface DockerImageBuilder {
 
     void build(DockerFileBuildRequest dockerFileBuildRequest, DockerImageBuildCallback callback);
 
+    void build(DockerFileBuildRequest dockerFileBuildRequest, DockerImageBuildCallback callback, boolean push);
+
 }

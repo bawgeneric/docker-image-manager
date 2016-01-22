@@ -30,16 +30,22 @@ import com.github.dockerjava.api.command.TagImageCmd;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.kodokojo.commons.model.*;
 import io.kodokojo.commons.docker.fetcher.DockerFileProjectFetcher;
 import io.kodokojo.commons.docker.fetcher.git.GitDockerFileScmEntry;
 import io.kodokojo.commons.utils.serviceLocator.Service;
 import io.kodokojo.commons.utils.serviceLocator.ServiceLocator;
 import io.kodokojo.docker.model.DockerFileBuildRequest;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +62,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(DataProviderRunner.class)
 public class DockerClientDockerImageBuilderTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerClientDockerImageBuilderTest.class);
@@ -69,6 +76,20 @@ public class DockerClientDockerImageBuilderTest {
 
     private ServiceLocator serviceLocator;
 
+    @DataProvider
+    public static Object[][] dataProviderAdd() {
+        // @formatter:off
+        return new Object[][] {
+                { "jpthiery/busybox", "centos:latest", "registry.docker.kodokojo.io", 5000, "registry.docker.kodokojo.io:5000/jpthiery/busybox", "centos:latest", "latest", true },
+                { "jpthiery/busybox:dev", "centos", "registry.docker.kodokojo.io", 5000, "registry.docker.kodokojo.io:5000/jpthiery/busybox", "centos:latest", "dev", true },
+                { "jpthiery/busybox", "centos:latest", null, 0, "jpthiery/busybox", "centos:latest", "latest", false },
+                { "jpthiery/busybox", "centos", null, 0, "jpthiery/busybox", "centos:latest", "latest", false },
+                { "jpthiery/busybox:1.0.0", "centos:7", null, 0, "jpthiery/busybox", "centos:7", "1.0.0", false }
+        };
+        // @formatter:on
+    }
+
+
     @Before
     public void setup() {
         dockerClient = mock(DockerClient.class);
@@ -77,19 +98,20 @@ public class DockerClientDockerImageBuilderTest {
     }
 
     @Test
-    public void valid_build_execution() throws IOException, InterruptedException {
-
+    @UseDataProvider("dataProviderAdd")
+    public void build_image(String image, String from, String registryHost, int port, String expectedImageName, String pullExpected, String tagExpected, boolean pushed) throws IOException, InterruptedException {
+        ImageName imageName = StringToImageNameConverter.convert(image);
+        ImageName imageNameFrom = StringToImageNameConverter.convert(from);
         DockerClientDockerImageBuilder imageBuilder = new DockerClientDockerImageBuilder(dockerClient, temporaryFolder.newFolder(), dockerFileProjectFetcher, serviceLocator);
 
-
-        ImageName imageName = StringToImageNameConverter.convert("jpthiery/busybox");
-        ImageName centos = StringToImageNameConverter.convert("centos");
-        DockerFile dockerFile = new DockerFile(imageName, centos);
+        DockerFile dockerFile = new DockerFile(imageName, imageNameFrom);
         GitDockerFileScmEntry dockerFileScmEntry = new GitDockerFileScmEntry(imageName, "git://github.com/kodokojo/acme", "HEAD", "/dockerfile");
         DockerFileBuildRequest dockerFileBuildRequest = new DockerFileBuildRequest(dockerFile, dockerFileScmEntry);
 
         Set<Service> services = new HashSet<>();
-        services.add(new Service("registry", "localhost", 5000));
+        if (StringUtils.isNotBlank(registryHost)) {
+            services.add(new Service("registry", registryHost, port));
+        }
         when(serviceLocator.getServiceByName(any())).thenReturn(services);
 
         when(dockerFileProjectFetcher.checkoutDockerFileProject(dockerFileScmEntry)).thenReturn(temporaryFolder.newFolder());
@@ -117,23 +139,25 @@ public class DockerClientDockerImageBuilderTest {
         when(dockerClient.tagImageCmd(tagImageNameIdCaptor.capture(), tagRegistryCaptor.capture(),tagCaptor.capture())).thenReturn(tagImageCmd);
         when(tagImageCmd.withForce()).thenReturn(tagImageCmd);
         when(tagImageCmd.withTag(any())).thenReturn(tagImageCmd);
-        when(dockerClient.pushImageCmd(pushCaptor.capture())).thenReturn(pushImageCmd);
-        when(pushImageCmd.withTag(any())).thenReturn(pushImageCmd);
-        when(pushImageCmd.exec(any())).thenReturn(pushImageResultCallback);
-
+        if (pushed) {
+            when(dockerClient.pushImageCmd(pushCaptor.capture())).thenReturn(pushImageCmd);
+            when(pushImageCmd.withTag(any())).thenReturn(pushImageCmd);
+            when(pushImageCmd.exec(any())).thenReturn(pushImageResultCallback);
+        }
 
         TestDockerImageBuildCallback callback = new TestDockerImageBuildCallback();
 
-        imageBuilder.build(dockerFileBuildRequest, callback);
+        imageBuilder.build(dockerFileBuildRequest, callback, pushed);
 
-        String expectedImageName = "localhost:5000/jpthiery/busybox";
 
         assertThat(callback.success).isTrue();
-        assertThat(pullImageNameCaptor.getValue()).isEqualTo("centos:latest");
+        assertThat(pullImageNameCaptor.getValue()).isEqualTo(pullExpected);
         assertThat(tagImageNameIdCaptor.getValue()).isEqualTo("123456");
         assertThat(tagRegistryCaptor.getValue()).isEqualTo(expectedImageName);
-        assertThat(tagCaptor.getValue()).isEqualTo("latest");
-        assertThat(pushCaptor.getValue()).isEqualTo(expectedImageName);
+        assertThat(tagCaptor.getValue()).isEqualTo(tagExpected);
+        if (pushed) {
+            assertThat(pushCaptor.getValue()).isEqualTo(expectedImageName);
+        }
     }
 
     private class TestDockerImageBuildCallback implements DockerImageBuildCallback {
