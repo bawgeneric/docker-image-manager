@@ -105,9 +105,20 @@ public class DefaultDockerFileRepository implements DockerFileRepository {
     }
 
     @Override
+    public void addAllDockerFile(Collection<DockerFile> dockerFiles) {
+        if (dockerFiles == null) {
+            throw new IllegalArgumentException("dockerFile must be defined.");
+        }
+        dockerFiles.forEach(this::addDockerFile);
+    }
+
+    @Override
     public void addDockerFile(DockerFile dockerFile) {
         if (dockerFile == null) {
             throw new IllegalArgumentException("dockerFile must be defined.");
+        }
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Adding Dockerfile {}", dockerFile);
         }
         writeLock.lock();
         try {

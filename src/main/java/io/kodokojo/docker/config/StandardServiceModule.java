@@ -62,9 +62,9 @@ public class StandardServiceModule extends AbstractModule {
 
     @Provides
     @Singleton
-    DockerFileSource provideDockerFileSource(DockerFileRepository dockerFileRepository, GitDockerFileProjectFetcher gitDockerFileProjectFetcher, GitBashbrewConfig gitBashbrewConfig, ApplicationConfig applicationConfig) {
+    DockerFileSource provideDockerFileSource(GitDockerFileProjectFetcher gitDockerFileProjectFetcher, GitBashbrewConfig gitBashbrewConfig, ApplicationConfig applicationConfig) {
         String workspace = applicationConfig.workspace();
-        return new GitBashbrewDockerFileSource(workspace, null, gitBashbrewConfig.bashbrewGitUrl(), gitBashbrewConfig.bashbrewLibraryPath(), dockerFileRepository, gitDockerFileProjectFetcher);
+        return new GitBashbrewDockerFileSource(workspace, null, gitBashbrewConfig.bashbrewGitUrl(), gitBashbrewConfig.bashbrewLibraryPath(), gitDockerFileProjectFetcher);
     }
 
     @Provides
@@ -99,7 +99,7 @@ public class StandardServiceModule extends AbstractModule {
 
     @Provides
     @Singleton
-    DockerImageBuilder provideDockerImageBuilder(ApplicationConfig applicationConfig, DockerConfig dockerConfig, DockerClient dockerClient, GitDockerFileProjectFetcher dockerFileProjectFetcher, ServiceLocator serviceLocator) {
+    DockerImageBuilder provideDockerImageBuilder(ApplicationConfig applicationConfig, DockerClient dockerClient, GitDockerFileProjectFetcher dockerFileProjectFetcher, ServiceLocator serviceLocator) {
         DockerClientDockerImageBuilder dockerClientDockerImageBuilder = new DockerClientDockerImageBuilder(dockerClient, new File(applicationConfig.dockerImageBuildDir()), dockerFileProjectFetcher, serviceLocator);
         return dockerClientDockerImageBuilder;
     }

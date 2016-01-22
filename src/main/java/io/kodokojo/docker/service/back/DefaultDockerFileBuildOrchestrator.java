@@ -86,7 +86,9 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
             }
             DockerFile current = dockerFileRepository.getDockerFileFromImageName(imageName);
             if (current == null) {
-                if (dockerFileSource.fetchDockerFile(imageName)) {
+                Set<DockerFile> dockerFiles = dockerFileSource.fetchDockerFile(imageName);
+                if (CollectionUtils.isNotEmpty(dockerFiles)) {
+                    dockerFileRepository.addAllDockerFile(dockerFiles);
                     current = dockerFileRepository.getDockerFileFromImageName(imageName);
                 } else {
                     LOGGER.error("Unable to retrieve DockerFile for image {}", imageName.getFullyQualifiedName());
