@@ -31,8 +31,8 @@ import com.tngtech.jgiven.attachment.Attachment;
 import io.kodokojo.docker.bdd.stage.AbstractRestStage;
 import io.kodokojo.commons.bdd.stage.docker.DockerCommonsGiven;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.commons.model.ImageName;
-import io.kodokojo.commons.model.StringToImageNameConverter;
+import io.kodokojo.commons.docker.model.ImageName;
+import io.kodokojo.commons.docker.model.StringToImageNameConverter;
 import retrofit.RetrofitError;
 
 import java.util.HashMap;

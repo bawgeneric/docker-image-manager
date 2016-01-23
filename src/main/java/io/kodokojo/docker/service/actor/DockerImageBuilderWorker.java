@@ -25,7 +25,7 @@ package io.kodokojo.docker.service.actor;
 import akka.actor.AbstractActor;
 import akka.japi.pf.ReceiveBuilder;
 import io.kodokojo.docker.model.DockerFileBuildRequest;
-import io.kodokojo.commons.model.ImageName;
+import io.kodokojo.commons.docker.model.ImageName;
 import io.kodokojo.docker.service.back.build.AbstractBuildRequestDockerImageBuildCallback;
 import io.kodokojo.docker.service.back.build.DockerImageBuilder;
 import org.slf4j.Logger;

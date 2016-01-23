@@ -26,7 +26,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
-import io.kodokojo.commons.model.DockerFile;
+import io.kodokojo.commons.docker.model.DockerFile;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
 import io.kodokojo.commons.utils.DockerClientSupport;
 import retrofit.RestAdapter;

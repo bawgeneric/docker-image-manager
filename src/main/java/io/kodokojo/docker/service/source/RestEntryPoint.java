@@ -26,7 +26,7 @@ import akka.actor.ActorRef;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
-import io.kodokojo.commons.model.*;
+import io.kodokojo.commons.docker.model.*;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
 import io.kodokojo.docker.model.DockerFileNode;
 import io.kodokojo.docker.model.HttpVerbe;

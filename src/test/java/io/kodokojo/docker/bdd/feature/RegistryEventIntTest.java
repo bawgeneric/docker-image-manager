@@ -36,7 +36,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 @As("RegistryEvent integration tests")
-public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven, DockerCommonsWhen, RestEntryPointThen<?>> {
+public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven<?>, DockerCommonsWhen, RestEntryPointThen<?>> {
 
     @Rule
     public DockerPresentMethodRule dockerPresentMethodRule = new DockerPresentMethodRule();

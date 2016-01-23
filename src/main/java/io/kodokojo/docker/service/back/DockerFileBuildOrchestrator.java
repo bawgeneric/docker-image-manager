@@ -22,7 +22,7 @@ package io.kodokojo.docker.service.back;
  * #L%
  */
 
-import io.kodokojo.commons.model.*;
+import io.kodokojo.commons.docker.model.*;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
 import io.kodokojo.docker.model.DockerFileBuildRequest;
 import io.kodokojo.docker.model.DockerFileBuildResponse;

@@ -47,8 +47,7 @@ public class Launcher {
 
         DockerFileRepository dockerFileRepository = injector.getInstance(DockerFileRepository.class);
         DockerFileSource dockerFileSource = injector.getInstance(DockerFileSource.class);
-        LOGGER.info("Docker-image-manager for project '{}' on stack '{} {}' fetching Dockerfiles.");
-        dockerFileRepository.addAllDockerFile(dockerFileSource.fetchAllDockerFile());
+        LOGGER.info("Docker-image-manager for project '{}' on stack '{} {}' fetching Dockerfiles.", kodokojoConfig.projectName(), kodokojoConfig.stackType(), kodokojoConfig.stackName());
         dockerFileRepository.addAllDockerFile(dockerFileSource.fetchAllDockerFile());
 
         entryPoint.start();

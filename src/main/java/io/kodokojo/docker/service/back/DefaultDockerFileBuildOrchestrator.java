@@ -24,7 +24,7 @@ package io.kodokojo.docker.service.back;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.kodokojo.commons.model.*;
+import io.kodokojo.commons.docker.model.*;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
 import io.kodokojo.docker.model.DockerFileBuildRequest;
 import io.kodokojo.docker.service.DockerFileRepository;

@@ -22,7 +22,7 @@ package io.kodokojo.docker.service;
  * #L%
  */
 
-import io.kodokojo.commons.model.ImageName;
+import io.kodokojo.commons.docker.model.ImageName;
 import io.kodokojo.docker.model.Layer;
 
 import java.util.Set;

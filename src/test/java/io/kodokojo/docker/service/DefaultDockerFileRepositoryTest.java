@@ -22,9 +22,9 @@ package io.kodokojo.docker.service;
  * #L%
  */
 
-import io.kodokojo.commons.model.DockerFile;
-import io.kodokojo.commons.model.ImageName;
-import io.kodokojo.commons.model.StringToImageNameConverter;
+import io.kodokojo.commons.docker.model.DockerFile;
+import io.kodokojo.commons.docker.model.ImageName;
+import io.kodokojo.commons.docker.model.StringToImageNameConverter;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

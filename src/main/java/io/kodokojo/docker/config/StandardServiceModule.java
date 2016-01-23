@@ -39,8 +39,8 @@ import io.kodokojo.commons.docker.fetcher.DockerFileSource;
 import io.kodokojo.commons.docker.fetcher.git.GitBashbrewDockerFileSource;
 import io.kodokojo.commons.docker.fetcher.git.GitDockerFileProjectFetcher;
 import io.kodokojo.commons.utils.docker.DockerSupport;
-import io.kodokojo.commons.utils.serviceLocator.ServiceLocator;
-import io.kodokojo.commons.utils.serviceLocator.docker.DockerServiceLocator;
+import io.kodokojo.commons.utils.servicelocator.ServiceLocator;
+import io.kodokojo.commons.utils.servicelocator.docker.DockerServiceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

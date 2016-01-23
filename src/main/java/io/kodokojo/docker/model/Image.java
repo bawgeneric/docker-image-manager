@@ -22,7 +22,7 @@ package io.kodokojo.docker.model;
  * #L%
  */
 
-import io.kodokojo.commons.model.ImageName;
+import io.kodokojo.commons.docker.model.ImageName;
 
 import java.util.ArrayList;
 import java.util.List;
