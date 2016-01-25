@@ -28,6 +28,7 @@ import io.kodokojo.docker.model.DockerFileBuildRequest;
 import io.kodokojo.commons.docker.model.ImageName;
 import io.kodokojo.docker.service.back.build.AbstractBuildRequestDockerImageBuildCallback;
 import io.kodokojo.docker.service.back.build.DockerImageBuilder;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,12 +76,16 @@ public class DockerImageBuilderWorker extends AbstractActor {
 
         @Override
         public void pushToRepositoryBegin(String repository, Date begin) {
-            LOGGER.info("{} - Push image {} begin", begin, repository);
+            if (StringUtils.isNotBlank(repository)) {
+                LOGGER.info("{} - Push image {} begin", begin, repository);
+            }
         }
 
         @Override
         public void pushToRepositoryEnd(String repository, Date begin) {
-            LOGGER.info("{} - Push image {} ended", begin, repository);
+            if (StringUtils.isNotBlank(repository)) {
+                LOGGER.info("{} - Push image {} ended", begin, repository);
+            }
         }
 
         @Override

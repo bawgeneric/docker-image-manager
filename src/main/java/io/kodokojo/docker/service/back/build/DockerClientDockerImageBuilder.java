@@ -130,6 +130,7 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
                         .awaitCompletion()
                         .onComplete();
                 callback.fromImagePulled(from);
+
                 pulled = true;
             } catch (InterruptedException e) {
                 String reason = String.format("Unable to pull image %s", from.getFullyQualifiedName());
@@ -246,7 +247,7 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
                     callback.pushToRepositoryEnd(imageName.getRepository(), new Date());
                     return true;
                 } catch (DockerClientException e) {
-                    String message = "An error occure while trying to tag image " + imageName.getFullyQualifiedName() + ".";
+                    String message = "An error occure while trying to push image " + imageName.getFullyQualifiedName() + ".";
                     LOGGER.error(message, e);
                     callback.buildFailed(message + " : " + e.getMessage(), new Date());
                 }
