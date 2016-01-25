@@ -31,8 +31,7 @@ import io.kodokojo.docker.service.DefaultDockerFileRepository;
 import io.kodokojo.docker.service.DefaultDockerImageRepository;
 import io.kodokojo.docker.service.DockerFileRepository;
 import io.kodokojo.docker.service.DockerImageRepository;
-import io.kodokojo.docker.service.back.DefaultDockerFileBuildOrchestrator;
-import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
+import io.kodokojo.docker.service.back.*;
 import io.kodokojo.docker.service.back.build.DockerClientDockerImageBuilder;
 import io.kodokojo.docker.service.back.build.DockerImageBuilder;
 import io.kodokojo.commons.docker.fetcher.DockerFileSource;
@@ -41,6 +40,7 @@ import io.kodokojo.commons.docker.fetcher.git.GitDockerFileProjectFetcher;
 import io.kodokojo.commons.utils.docker.DockerSupport;
 import io.kodokojo.commons.utils.servicelocator.ServiceLocator;
 import io.kodokojo.commons.utils.servicelocator.docker.DockerServiceLocator;
+import io.kodokojo.docker.service.source.RestEntryPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +52,9 @@ public class StandardServiceModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        //
+        DefaultDockerFileNodeRepository defaultDockerFileNodeRepository = new DefaultDockerFileNodeRepository();
+        bind(DockerFileNodeRepository.class).toInstance(defaultDockerFileNodeRepository);
+        bind(DockerFileBuildPlanResultListener.class).toInstance(defaultDockerFileNodeRepository);
     }
 
     @Provides
@@ -98,6 +100,7 @@ public class StandardServiceModule extends AbstractModule {
         DockerClientDockerImageBuilder dockerClientDockerImageBuilder = new DockerClientDockerImageBuilder(dockerClient, new File(applicationConfig.dockerImageBuildDir()), dockerFileProjectFetcher, serviceLocator);
         return dockerClientDockerImageBuilder;
     }
+
 
 
 

@@ -88,7 +88,7 @@ public class DockerFileBuildPlan {
     }
 
     public Map<DockerFileBuildRequest, DockerFileBuildResponse> getChildren() {
-        return new HashMap<>(children);
+        return children;
     }
 
     @Override

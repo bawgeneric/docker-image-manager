@@ -29,6 +29,7 @@ import com.tngtech.jgiven.annotation.ExpectedScenarioState;
 import io.kodokojo.commons.docker.model.DockerFile;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
 import io.kodokojo.commons.utils.DockerClientSupport;
+import io.kodokojo.docker.model.DockerFileNode;
 import retrofit.RestAdapter;
 import retrofit.converter.GsonConverter;
 import retrofit.http.GET;
@@ -57,6 +58,9 @@ public abstract class AbstractRestStage<SELF extends AbstractRestStage<?>> exten
 
         @GET("/api/dockerbuildplan/{namespace}/{name}/{tag}")
         DockerFileBuildPlan getDockerFileBuildPlan(@Path("namespace") String namespace, @Path("name") String name, @Path("tag") String tag);
+
+        @GET("/api/dockernode/{namespace}/{name}/{tag}")
+        DockerFileNode getDockerFileNode(@Path("namespace") String namespace, @Path("name") String name, @Path("tag") String tag);
 
         @GET("/api")
         String apiVersion();

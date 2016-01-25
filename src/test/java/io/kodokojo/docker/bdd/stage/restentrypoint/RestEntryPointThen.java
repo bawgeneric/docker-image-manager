@@ -22,13 +22,19 @@ package io.kodokojo.docker.bdd.stage.restentrypoint;
  * #L%
  */
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.tngtech.jgiven.CurrentStep;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
+import com.tngtech.jgiven.annotation.ProvidedScenarioState;
 import com.tngtech.jgiven.annotation.Quoted;
+import com.tngtech.jgiven.attachment.Attachment;
 import io.kodokojo.docker.bdd.stage.AbstractRestStage;
 import io.kodokojo.commons.bdd.stage.docker.DockerCommonsGiven;
 import io.kodokojo.commons.docker.model.DockerFile;
 import io.kodokojo.commons.docker.model.ImageName;
 import io.kodokojo.commons.docker.model.StringToImageNameConverter;
+import io.kodokojo.docker.model.DockerFileNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +51,10 @@ public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Abst
     @ExpectedScenarioState
     Map<String, String> containers = new HashMap<>();
 
+    @ProvidedScenarioState
+    CurrentStep currentStep;
+
+
     private ClientRestEntryPoint restEntryPoint;
 
     public SELF repository_contain_a_Dockerfile_of_$_image(@Quoted String imageNameStr) {
@@ -59,15 +69,39 @@ public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Abst
             restEntryPoint = provideClientRestEntryPoint(url);
         }
 
-        /*
-        String httpContainerUrl = dockerClientSupport.getHttpContainerUrl(containers.get(DockerCommonsGiven.DOCKER_IMAGE_MANAGER_KEY), 8080);
-        LOGGER.debug("Docker image {}/api/repository/{}/{}/{}" , httpContainerUrl, imageName.getNamespace(), imageName.getName(), imageName.getTag());
-        */
-
         DockerFile dockerFile = restEntryPoint.getDockerFile(imageName.getNamespace(), imageName.getName(), imageName.getTag());
         LOGGER.debug("Retrive Dockerfile for image {}: {}", imageName.getFullyQualifiedName(), dockerFile);
 
         assertThat(dockerFile).isNotNull();
+
+        Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
+        String content = gson.toJson(dockerFile);
+        Attachment attachment = Attachment.plainText(content).withTitle("DockerFile for " +imageName.getFullyQualifiedName()).withFileName("dockerfile.json");
+        currentStep.addAttachment(attachment);
+
+        return self();
+    }
+    public SELF repository_contain_a_Dockerfile_node_of_$_image(@Quoted String imageNameStr) {
+        if (isBlank(imageNameStr)) {
+            throw new IllegalArgumentException("imageNameStr must be defined.");
+        }
+        ImageName imageName = StringToImageNameConverter.convert(imageNameStr);
+
+        if (restEntryPoint == null) {
+            String containerId = containers.get(DockerCommonsGiven.DOCKER_IMAGE_MANAGER_KEY);
+            String url = dockerClientSupport.getHttpContainerUrl(containerId, 8080);
+            restEntryPoint = provideClientRestEntryPoint(url);
+        }
+
+        DockerFileNode dockerFileNode = restEntryPoint.getDockerFileNode(imageName.getNamespace(), imageName.getName(), imageName.getTag());
+        LOGGER.debug("Retrive Dockerfile node for image {}: {}", imageName.getFullyQualifiedName(), dockerFileNode);
+
+        assertThat(dockerFileNode).isNotNull();
+
+        Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
+        String content = gson.toJson(dockerFileNode);
+        Attachment attachment = Attachment.plainText(content).withTitle("DockerFileNode for " +imageName.getFullyQualifiedName()).withFileName("dockerNodefile.json");
+        currentStep.addAttachment(attachment);
 
         return self();
     }

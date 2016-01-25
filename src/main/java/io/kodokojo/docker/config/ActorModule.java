@@ -30,8 +30,10 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.kodokojo.docker.service.DockerImageRepository;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
+import io.kodokojo.docker.service.back.DockerFileBuildPlanResultListener;
 import io.kodokojo.docker.service.back.build.DockerImageBuilder;
 import io.kodokojo.docker.service.actor.*;
+import io.kodokojo.docker.service.source.RestEntryPoint;
 
 import javax.inject.Named;
 
@@ -52,8 +54,8 @@ public class ActorModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("dependencyDockerfileUpdateDispatcher")
-    ActorRef provideDependencyDockerfileUpdateDispatcher(ActorSystem system, DockerFileBuildOrchestrator orchestrator, @Named("dockerImageBuilder") ActorRef dockerImageBuilder) {
-        return system.actorOf(Props.create(DependencyDockerfileUpdateDispatcher.class, orchestrator, dockerImageBuilder));
+    ActorRef provideDependencyDockerfileUpdateDispatcher(ActorSystem system, DockerFileBuildOrchestrator orchestrator, @Named("dockerImageBuilder") ActorRef dockerImageBuilder, @Named("dockerBuildPlanResultListener") ActorRef dockerBuildPlanResultListener) {
+        return system.actorOf(Props.create(DependencyDockerfileUpdateDispatcher.class, orchestrator, dockerImageBuilder, dockerBuildPlanResultListener));
     }
 
     @Provides
@@ -75,6 +77,13 @@ public class ActorModule extends AbstractModule {
     @Named("pushEventChecker")
     ActorRef providePushEventChecker(ActorSystem system, DockerImageRepository dockerImageRepository, @Named("dependencyDockerfileUpdateDispatcher") ActorRef dependencyDockerfileUpdateDispatcher) {
         return system.actorOf(Props.create(PushEventChecker.class, dockerImageRepository, dependencyDockerfileUpdateDispatcher));
+    }
+
+    @Provides
+    @Singleton
+    @Named("dockerBuildPlanResultListener")
+    ActorRef providePushEventChecker(ActorSystem system, DockerFileBuildPlanResultListener dockerFileBuildPlanResultListener) {
+        return system.actorOf(Props.create(DockerFileBuildPlanResultWorker.class, dockerFileBuildPlanResultListener));
     }
 
 }

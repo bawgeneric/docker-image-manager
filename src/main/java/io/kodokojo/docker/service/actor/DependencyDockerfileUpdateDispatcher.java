@@ -27,10 +27,7 @@ import akka.actor.ActorRef;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.docker.model.DockerFileBuildRequest;
-import io.kodokojo.docker.model.DockerFileBuildResponse;
-import io.kodokojo.docker.model.RegistryEvent;
+import io.kodokojo.docker.model.*;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +42,7 @@ public class DependencyDockerfileUpdateDispatcher extends AbstractActor {
     private final DockerFileBuildOrchestrator dockerFileBuildOrchestrator;
 
     @Inject
-    public DependencyDockerfileUpdateDispatcher(DockerFileBuildOrchestrator dockerFileBuildOrchestrator, @Named("dockerImageBuilder") ActorRef dockerImageBuilder) {
+    public DependencyDockerfileUpdateDispatcher(DockerFileBuildOrchestrator dockerFileBuildOrchestrator, @Named("dockerImageBuilder") ActorRef dockerImageBuilder, @Named("dockerBuildPlanResultListener") ActorRef dockerBuildPlanResultListener) {
         if (dockerFileBuildOrchestrator == null) {
             throw new IllegalArgumentException("dockerFileBuildOrchestrator must be defined.");
         }
@@ -53,7 +50,7 @@ public class DependencyDockerfileUpdateDispatcher extends AbstractActor {
         receive(ReceiveBuilder.match(RegistryEvent.class, push -> {
             DockerFileBuildPlan dockerFileBuildPlan = this.dockerFileBuildOrchestrator.receiveUpdateEvent(push);
             if (dockerFileBuildPlan != null) {
-                if (LOGGER.isDebugEnabled()){
+                if (LOGGER.isDebugEnabled()) {
                     Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
                     LOGGER.debug("DockerFileBuildPlan Added {}", gson.toJson(dockerFileBuildPlan));
                 }
@@ -61,11 +58,23 @@ public class DependencyDockerfileUpdateDispatcher extends AbstractActor {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Request Build of Docker Image {}", child.getDockerFile().getImageName().getFullyQualifiedName());
                     }
+
                     dockerImageBuilder.tell(child, self());
                 }
             }
         })
-                .match(DockerFileBuildResponse.class, this.dockerFileBuildOrchestrator::receiveDockerBuildResponse)
+                .match(DockerFileBuildResponse.class, dockerFileBuildResponse -> {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Receive a DockerFileBuildResponse {}", dockerFileBuildResponse);
+                    }
+                    DockerFileBuildPlanResult buildPlanResult = this.dockerFileBuildOrchestrator.receiveDockerBuildResponse(dockerFileBuildResponse);
+                    if (buildPlanResult != null) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("DockerFileBuildPlanRequest {} is completed, notifying listener  {}",dockerFileBuildResponse.getDockerFileBuildRequest() ,dockerFileBuildResponse);
+                        }
+                        dockerBuildPlanResultListener.tell(buildPlanResult, self());
+                    }
+                })
                 .build());
     }
 }

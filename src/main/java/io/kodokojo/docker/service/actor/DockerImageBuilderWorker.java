@@ -70,6 +70,7 @@ public class DockerImageBuilderWorker extends AbstractActor {
         public void buildSuccess(Date endDate) {
             LOGGER.info("Build of image {} SUCCESS", buildImageName.getFullyQualifiedName());
             super.buildSuccess(endDate);
+            sender().tell(dockerFileBuildResponseBuilder.build(), self());
         }
 
         @Override

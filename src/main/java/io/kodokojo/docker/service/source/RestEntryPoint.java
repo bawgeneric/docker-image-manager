@@ -33,6 +33,7 @@ import io.kodokojo.docker.model.HttpVerbe;
 import io.kodokojo.docker.model.RestRequest;
 import io.kodokojo.docker.service.DockerFileRepository;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
+import io.kodokojo.docker.service.back.DockerFileNodeRepository;
 import io.kodokojo.docker.utils.JsonTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,8 +67,10 @@ public class RestEntryPoint {
 
     private final DockerFileBuildOrchestrator dockerFileBuildOrchestrator;
 
+    private final DockerFileNodeRepository dockerFileNodeRepository;
+
     @Inject
-    public RestEntryPoint(@Named("pushEventDispatcher") ActorRef pushEventDispatcher, DockerFileRepository dockerFileRepository, DockerFileBuildOrchestrator dockerFileBuildOrchestrator) {
+    public RestEntryPoint(@Named("pushEventDispatcher") ActorRef pushEventDispatcher, DockerFileRepository dockerFileRepository, DockerFileBuildOrchestrator dockerFileBuildOrchestrator, DockerFileNodeRepository dockerFileNodeRepository) {
         if (pushEventDispatcher == null) {
             throw new IllegalArgumentException("pushEventDispatcher must be defined.");
         }
@@ -80,6 +83,10 @@ public class RestEntryPoint {
             throw new IllegalArgumentException("dockerFileBuildOrchestrator must be defined.");
         }
         this.dockerFileBuildOrchestrator = dockerFileBuildOrchestrator;
+        if (dockerFileNodeRepository == null) {
+            throw new IllegalArgumentException("dockerFileNodeRepository must be defined.");
+        }
+        this.dockerFileNodeRepository = dockerFileNodeRepository;
         jsonResponseTransformer = new JsonTransformer();
     }
 
@@ -160,9 +167,34 @@ public class RestEntryPoint {
             if (dockerFile == null) {
                 halt(404);
             }
-            Set<DockerFile> children = dockerFileRepository.getDockerFileChildOf(dockerFile);
+            return dockerFile;
 
-            return new DockerFileNode(dockerFile, children);
+        }, jsonResponseTransformer);
+
+
+        get("/api/dockernode/:namespace/:name/:tag", JSON_CONTENT_TYPE, (request, response) -> {
+
+            String namespace = request.params(":namespace");
+            String name = request.params(":name");
+            String tag = request.params(":tag");
+
+            ImageNameBuilder builder = new ImageNameBuilder();
+            builder.setNamespace(namespace);
+            builder.setName(name);
+            builder.setTag(tag);
+            ImageName imageName = builder.build();
+
+            DockerFileNode dockerFileNode = dockerFileNodeRepository.getDockerFileNode(imageName);
+
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Request DockerFileNode for image {}, found : {}", imageName.getFullyQualifiedName(), dockerFileNode);
+            }
+
+            if (dockerFileNode == null) {
+                halt(404);
+            }
+
+            return dockerFileNode;
 
         }, jsonResponseTransformer);
 

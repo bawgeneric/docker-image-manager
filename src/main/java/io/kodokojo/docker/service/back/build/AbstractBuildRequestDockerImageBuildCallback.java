@@ -36,6 +36,7 @@ public abstract class AbstractBuildRequestDockerImageBuildCallback implements Do
     public AbstractBuildRequestDockerImageBuildCallback(DockerFileBuildRequest dockerFileBuildRequest) {
         this.dockerFileBuildRequest = dockerFileBuildRequest;
         this.dockerFileBuildResponseBuilder = new DockerFileBuildResponseBuilder(dockerFileBuildRequest);
+        dockerFileBuildResponseBuilder.setLaunchBuildDate(new Date());
     }
 
     @Override

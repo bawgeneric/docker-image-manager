@@ -25,13 +25,10 @@ package io.kodokojo.docker.service.back;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.kodokojo.commons.docker.model.*;
-import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.docker.model.DockerFileBuildRequest;
+import io.kodokojo.docker.model.*;
 import io.kodokojo.docker.service.DockerFileRepository;
 import io.kodokojo.commons.docker.fetcher.DockerFileSource;
 import io.kodokojo.commons.docker.fetcher.git.GitDockerFileScmEntry;
-import io.kodokojo.docker.model.DockerFileBuildResponse;
-import io.kodokojo.docker.model.RegistryEvent;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,7 +150,7 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
     }
 
     @Override
-    public void receiveDockerBuildRequest(DockerFileBuildRequest dockerFileBuildRequest) {
+    public DockerFileBuildPlanResult receiveDockerBuildRequest(DockerFileBuildRequest dockerFileBuildRequest) {
         if (dockerFileBuildRequest == null) {
             throw new IllegalArgumentException("dockerFileBuildRequest must be defined.");
         }
@@ -161,9 +158,12 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
     }
 
     @Override
-    public void receiveDockerBuildResponse(DockerFileBuildResponse dockerFileBuildResponse) {
+    public DockerFileBuildPlanResult receiveDockerBuildResponse(DockerFileBuildResponse dockerFileBuildResponse) {
         if (dockerFileBuildResponse == null) {
             throw new IllegalArgumentException("dockerFileBuildResponse must be defined.");
+        }
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Receive DockerBuildPlanResponse : {}", dockerFileBuildResponse);
         }
         writeLock.lock();
         try {
@@ -182,18 +182,29 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
                 if (dockerFileBuildPlan != null) {
                     dockerFileBuildPlan.setDockerFileBuildResponse(dockerFileBuildResponse);
                 }
-
             }
 
             if (dockerFileBuildPlan == null) {
                 throw new IllegalStateException("We don't have any build plan for image " + imageName.getFullyQualifiedName() + ".");
             }
-            dockerFileBuildPlan.getChildren().put(dockerFileBuildResponse.getDockerFileBuildRequest(), dockerFileBuildResponse);
-            dockerFileBuildPlan.setLastUpdateDate(dockerFileBuildResponse.getLastUpdateDate());
 
+            if (dockerFileBuildPlan.getDockerFile().getImageName().equals(dockerFileBuildResponse.getDockerFileBuildRequest().getDockerFile().getFrom())) {
+
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Affect Result {} to {} key",dockerFileBuildResponse ,  dockerFileBuildResponse.getDockerFileBuildRequest());
+                }
+                dockerFileBuildPlan.getChildren().put(dockerFileBuildResponse.getDockerFileBuildRequest(), dockerFileBuildResponse);
+            }
+            dockerFileBuildPlan.setLastUpdateDate(dockerFileBuildResponse.getLastUpdateDate());
+            if (dockerBuildPlanIsFinish(dockerFileBuildPlan)) {
+                DockerFileBuildPlanResult response = new DockerFileBuildPlanResult(dockerFileBuildPlan.getDockerFile(),new HashSet<>(dockerFileBuildPlan.getChildren().values()),dockerFileBuildPlan.getDockerFileBuildResponse());
+                buildPlan.remove(dockerFileBuildPlan.getDockerFile().getImageName());
+                return response;
+            }
         } finally {
             writeLock.unlock();
         }
+        return null;
     }
 
     private DockerFileBuildPlan create(DockerFile current, Date timestamp) {
@@ -213,4 +224,18 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
 
     }
 
+    private boolean dockerBuildPlanIsFinish(DockerFileBuildPlan dockerFileBuildPlan) {
+        assert dockerFileBuildPlan != null : "dockerFileBuildPlan must be defined";
+        boolean res = true;
+        Iterator<Map.Entry<DockerFileBuildRequest, DockerFileBuildResponse>> iterator = dockerFileBuildPlan.getChildren().entrySet().iterator();
+        while(res && iterator.hasNext()) {
+            Map.Entry<DockerFileBuildRequest, DockerFileBuildResponse> entry = iterator.next();
+            res = entry.getValue() != null;
+        }
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("DockerFileBuildPlan {} is {} ", dockerFileBuildPlan, res ? "Complete" : "working in progress");
+        }
+        return res;
+    }
 }

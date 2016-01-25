@@ -60,11 +60,12 @@ public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven<?>, Do
         when().push_image_$_to_registry(image);
 
         dockerRegistryThen
-        .then().waiting_$_seconds(7)
+        .then().waiting_$_seconds(8)
         .and().attach_docker_image_manager_logs();
-        dockerBuildPlanOrchestratorThen.and().docker_build_plan_orchestrator_contain_a_DockerBuildPlan_for_image_$(image)
+        dockerBuildPlanOrchestratorThen
         .and().docker_build_plan_orchestrator_NOT_contain_a_DockerBuildPlan_for_image_$(parent);
-        then().and().repository_contain_a_Dockerfile_of_$_image(image);
+        then().and().repository_contain_a_Dockerfile_of_$_image(image)
+        .and().repository_contain_a_Dockerfile_node_of_$_image(image);
     }
 
 }
