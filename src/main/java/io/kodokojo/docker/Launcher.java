@@ -40,7 +40,7 @@ public class Launcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(Launcher.class);
 
     public static void main(String[] args) {
-        Injector injector = Guice.createInjector( new PropertyModule(), new StandardServiceModule(), new ActorModule(), new DockerModule());
+        Injector injector = Guice.createInjector( new PropertyModule(args), new StandardServiceModule(), new ActorModule(), new DockerModule());
 
         RestEntryPoint entryPoint = injector.getInstance(RestEntryPoint.class);
         KodokojoConfig kodokojoConfig = injector.getInstance(KodokojoConfig.class);
