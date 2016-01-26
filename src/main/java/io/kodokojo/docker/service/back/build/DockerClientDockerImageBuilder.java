@@ -203,7 +203,7 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
                 imageNameToRegistry = registry + imageNameToRegistry;
             }
         }
-        return  imageNameToRegistry;
+        return imageNameToRegistry;
     }
 
     private String getRegistryUrl(String registry) {
@@ -234,15 +234,15 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
             boolean tagged = tagImage(imageName, imageId, callback, true);
             if (tagged) {
                 callback.pushToRepositoryBegin(imageName.getRepository(), new Date());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Trying to push imageId {} to registry {}", imageId, imageNameToRegistry.replaceAll(":latest$", ""));
+                }
                 PushImageCmd pushImageCmd = dockerClient.pushImageCmd(imageNameToRegistry);
 
                 if (StringUtils.isNotBlank(imageName.getTag())) {
                     pushImageCmd = pushImageCmd.withTag(imageName.getTag());
                 }
                 try {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Trying to push imageId {} to registry {}", imageId, imageNameToRegistry.replaceAll(":latest$", ""));
-                    }
                     pushImageCmd.exec(new PushImageResultCallback()).awaitSuccess();
                     callback.pushToRepositoryEnd(imageName.getRepository(), new Date());
                     return true;

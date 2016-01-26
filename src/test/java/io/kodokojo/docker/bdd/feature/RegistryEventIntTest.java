@@ -30,13 +30,14 @@ import io.kodokojo.docker.bdd.Registry;
 import io.kodokojo.commons.bdd.stage.docker.DockerCommonsGiven;
 import io.kodokojo.commons.bdd.stage.docker.DockerCommonsWhen;
 import io.kodokojo.commons.bdd.stage.docker.DockerRegistryThen;
+import io.kodokojo.docker.bdd.stage.ApplicationGiven;
 import io.kodokojo.docker.bdd.stage.dockerfilebuildplan.DockerBuildPlanOrchestratorThen;
 import io.kodokojo.docker.bdd.stage.restentrypoint.RestEntryPointThen;
 import org.junit.Rule;
 import org.junit.Test;
 
 @As("RegistryEvent integration tests")
-public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven<?>, DockerCommonsWhen, RestEntryPointThen<?>> {
+public class RegistryEventIntTest extends ScenarioTest<ApplicationGiven<?>, DockerCommonsWhen, RestEntryPointThen<?>> {
 
     @Rule
     public DockerPresentMethodRule dockerPresentMethodRule = new DockerPresentMethodRule();
@@ -53,6 +54,7 @@ public class RegistryEventIntTest extends ScenarioTest<DockerCommonsGiven<?>, Do
         String image = "busybox:latest";
 
         given().$_is_pull(image)
+                .and().$_is_pull("registry:2")
                 .and().kodokojo_docker_image_manager_is_started()
                 .and().registry_send_notification_to_docker_image_manager()
                 .and().registry_is_started();

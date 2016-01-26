@@ -1,0 +1,33 @@
+docker-image-manager:
+  image: kodokojo/docker-image-builder
+  name: dckimg
+  labels:
+    - "kodokojo-projectName=Acme"
+    - "kodokojo-stackType=Build"
+    - "kodokojo-stackName=DevA"
+    - "kodokojo-componentName=docker-image-builder"
+#  environment:
+#    - DOCKER_HOST=tcp://192.168.99.100:2376
+#    - DOCKER_CERT_PATH=/Users/jpthiery/.docker/machine/machines/default
+  environment:
+    - DOCKER_HOST=unix:///var/run/docker.sock
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+  ports:
+    - 8080
+  command: --project.name Acme --stack.name DevA --stack.type Build --git.bashbrew.url git://github.com/kodokojo/acme --git.bashbrew.library.path bashbrew/library
+
+registry:
+  image: registry:2
+  labels:
+    - "kodokojo-projectName=Acme"
+    - "kodokojo-stackType=Build"
+    - "kodokojo-stackName=DevA"
+    - "kodokojo-componentName=registry"
+    - "kodokojo-componentType=registry"
+  volumes:
+    - ./config.yml:/etc/docker/registry/config.yml
+  ports:
+    - 5000
+  links:
+    - docker-image-manager:dockerimagemanager
