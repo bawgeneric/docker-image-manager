@@ -114,9 +114,7 @@ public class DockerClientDockerImageBuilderTest {
         when(serviceLocator.getServiceByName(any())).thenReturn(services);
 
         when(dockerFileProjectFetcher.checkoutDockerFileProject(dockerFileScmEntry)).thenReturn(temporaryFolder.newFolder());
-        PullImageCmd pullImgCmd  = mock(PullImageCmd.class);
-        PullImageResultCallback resultCallback = mock(PullImageResultCallback.class);
-        ArgumentCaptor<String> pullImageNameCaptor = ArgumentCaptor.forClass(String.class);
+
         ArgumentCaptor<String> tagImageNameIdCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> tagRegistryCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> tagCaptor = ArgumentCaptor.forClass(String.class);
@@ -126,10 +124,6 @@ public class DockerClientDockerImageBuilderTest {
         TagImageCmd tagImageCmd = mock(TagImageCmd.class);
         PushImageCmd pushImageCmd = mock(PushImageCmd.class);
         PushImageResultCallback pushImageResultCallback = mock(PushImageResultCallback.class);
-
-        when(dockerClient.pullImageCmd(pullImageNameCaptor.capture())).thenReturn(pullImgCmd);
-        when(pullImgCmd.exec(any())).thenReturn(resultCallback);
-        when(resultCallback.awaitCompletion()).thenReturn(resultCallback);
 
         when(dockerClient.buildImageCmd(any(File.class))).thenReturn(buildImageCmd);
         when(buildImageCmd.exec(any())).thenReturn(buildImageResultCallback);
@@ -150,7 +144,6 @@ public class DockerClientDockerImageBuilderTest {
 
 
         assertThat(callback.success).isTrue();
-        assertThat(pullImageNameCaptor.getValue()).isEqualTo(pullExpected);
         assertThat(tagImageNameIdCaptor.getValue()).isEqualTo("123456");
         assertThat(tagRegistryCaptor.getValue()).isEqualTo(expectedImageName);
         assertThat(tagCaptor.getValue()).isEqualTo(tagExpected);
@@ -162,11 +155,6 @@ public class DockerClientDockerImageBuilderTest {
     private class TestDockerImageBuildCallback implements DockerImageBuildCallback {
 
         private boolean success = false;
-
-        @Override
-        public void fromImagePulled(ImageName imageName) {
-
-        }
 
         @Override
         public void buildBegin(Date beginDate) {

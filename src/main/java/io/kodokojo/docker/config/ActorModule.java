@@ -28,14 +28,15 @@ import akka.actor.Props;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import io.kodokojo.docker.service.DockerImageRepository;
+import io.kodokojo.docker.service.actor.*;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.back.DockerFileBuildPlanResultListener;
 import io.kodokojo.docker.service.back.build.DockerImageBuilder;
-import io.kodokojo.docker.service.actor.*;
 
 import javax.inject.Named;
 
 public class ActorModule extends AbstractModule {
+
     @Override
     protected void configure() {
         bind(ActorSystem.class).toInstance(ActorSystem.apply("commons-image-manager"));
@@ -43,42 +44,36 @@ public class ActorModule extends AbstractModule {
 
 
     @Provides
-//    @Singleton
     @Named("registryRequestWorker")
     ActorRef provideRequestWorker(ActorSystem system) {
         return system.actorOf(Props.create(RegistryRequestWorker.class));
     }
 
     @Provides
-//    @Singleton
     @Named("dockerFileBuildPlanWorker")
     ActorRef provideDockerFileBuildPlanWorker(ActorSystem system, DockerFileBuildOrchestrator orchestrator, @Named("dockerImageBuilder") ActorRef dockerImageBuilder, @Named("dockerBuildPlanResultListener") ActorRef dockerBuildPlanResultListener) {
         return system.actorOf(Props.create(DockerFileBuildPlanWorker.class, orchestrator, dockerImageBuilder, dockerBuildPlanResultListener));
     }
 
     @Provides
-//    @Singleton
     @Named("dockerImageBuilder")
     ActorRef provideDockerImageBuilder(ActorSystem system, DockerImageBuilder builder) {
         return system.actorOf(Props.create(DockerImageBuilderWorker.class, builder));
     }
 
     @Provides
-//    @Singleton
     @Named("pushEventDispatcher")
     ActorRef providePushEventDispatcher(ActorSystem system, @Named("pushEventChecker") ActorRef pushEventChecker, @Named("registryRequestWorker") ActorRef registryRequestWorker) {
         return system.actorOf(Props.create(PushEventDispatcher.class, pushEventChecker, registryRequestWorker));
     }
 
     @Provides
-//    @Singleton
     @Named("pushEventChecker")
     ActorRef providePushEventChecker(ActorSystem system, DockerImageRepository dockerImageRepository, @Named("dockerFileBuildPlanWorker") ActorRef dockerFileBuildPlanWorker) {
         return system.actorOf(Props.create(PushEventChecker.class, dockerImageRepository, dockerFileBuildPlanWorker));
     }
 
     @Provides
-//    @Singleton
     @Named("dockerBuildPlanResultListener")
     ActorRef providePushEventChecker(ActorSystem system, DockerFileBuildPlanResultListener dockerFileBuildPlanResultListener) {
         return system.actorOf(Props.create(DockerFileBuildPlanResultWorker.class, dockerFileBuildPlanResultListener));

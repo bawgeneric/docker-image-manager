@@ -115,6 +115,10 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
                 currentDir.mkdirs();
             }
 
+
+            //  TODO Try to use url option to build image instead of checkout project.
+
+
             GitDockerFileScmEntry dockerFileScmEntry = dockerFileBuildRequest.getDockerFileScmEntry();
             File projectDir = dockerFileProjectFetcher.checkoutDockerFileProject(dockerFileScmEntry);
             if (projectDir == null || !projectDir.canRead()) {
@@ -123,64 +127,49 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
             }
             File dockerFileDirectory = new File(projectDir.getAbsolutePath() + File.separator + dockerFileScmEntry.getDockerFilePath());
 
-            boolean pulled = false;
-            try {
-                dockerClient.pullImageCmd(from.getShortName())
-                        .exec(new PullImageResultCallback())
-                        .awaitCompletion()
-                        .onComplete();
-                callback.fromImagePulled(from);
 
-                pulled = true;
-            } catch (InterruptedException e) {
-                String reason = String.format("Unable to pull image %s", from.getFullyQualifiedName());
-                LOGGER.error(reason, e);
-                callback.buildFailed(reason, new Date());
-            }
-
-            if (pulled) {
-                callback.buildBegin(new Date());
-                BuildImageResultCallback resultCallback = new BuildImageResultCallback() {
-                    @Override
-                    public void onNext(BuildResponseItem item) {
-                        callback.appendOutput(item.getStream());
-                        super.onNext(item);
-                    }
-                };
-                if (LOGGER.isTraceEnabled()) {
-                    File dockerFileFile = new File(dockerFileDirectory.getAbsolutePath() + File.separator + "Dockerfile");
-                    try {
-                        String content = FileUtils.readFileToString(dockerFileFile);
-                        LOGGER.trace("Trying to build image {} with following Dockerfile : \n{}\n", imageName.getFullyQualifiedName(), content);
-                    } catch (IOException e) {
-                        LOGGER.trace("Unable to read content of Dockerfile at following path " + dockerFileFile.getAbsolutePath());
-                    }
+            callback.buildBegin(new Date());
+            BuildImageResultCallback resultCallback = new BuildImageResultCallback() {
+                @Override
+                public void onNext(BuildResponseItem item) {
+                    callback.appendOutput(item.getStream());
+                    super.onNext(item);
                 }
-                String imageId = null;
+            };
+            if (LOGGER.isTraceEnabled()) {
+                File dockerFileFile = new File(dockerFileDirectory.getAbsolutePath() + File.separator + "Dockerfile");
                 try {
-                    imageId = dockerClient.buildImageCmd(dockerFileDirectory).exec(resultCallback).awaitImageId();
-                } catch (DockerClientException e) {
-                    String message = "An error occurre while trying to build image " + imageName.getFullyQualifiedName() + ".";
-                    LOGGER.error(message, e);
-                    callback.buildFailed(message + " : " + e.getMessage(), new Date());
-                }
-                Date buildEnd = new Date();
-                if (isNotBlank(imageId)) {
-                    boolean res = false;
-                    if (push) {
-
-                        res = tagAndPushImage(imageName, imageId, callback);
-                    } else {
-                        res = tagImage(imageName, imageId, callback, false);
-                    }
-                    if (res) {
-                        Date now = new Date();
-                        callback.buildSuccess(now);
-                    }
-                } else {
-                    callback.buildFailed("Not able to build Docker image " + imageName.getFullyQualifiedName(), buildEnd);
+                    String content = FileUtils.readFileToString(dockerFileFile);
+                    LOGGER.trace("Trying to build image {} with following Dockerfile : \n{}\n", imageName.getFullyQualifiedName(), content);
+                } catch (IOException e) {
+                    LOGGER.trace("Unable to read content of Dockerfile at following path " + dockerFileFile.getAbsolutePath());
                 }
             }
+            String imageId = null;
+            try {
+                imageId = dockerClient.buildImageCmd(dockerFileDirectory).exec(resultCallback).awaitImageId();
+            } catch (DockerClientException e) {
+                String message = "An error occurre while trying to build image " + imageName.getFullyQualifiedName() + ".";
+                LOGGER.error(message, e);
+                callback.buildFailed(message + " : " + e.getMessage(), new Date());
+            }
+            Date buildEnd = new Date();
+            if (isNotBlank(imageId)) {
+                boolean res = false;
+                if (push) {
+
+                    res = tagAndPushImage(imageName, imageId, callback);
+                } else {
+                    res = tagImage(imageName, imageId, callback, false);
+                }
+                if (res) {
+                    Date now = new Date();
+                    callback.buildSuccess(now);
+                }
+            } else {
+                callback.buildFailed("Not able to build Docker image " + imageName.getFullyQualifiedName(), buildEnd);
+            }
+
 
         }
 

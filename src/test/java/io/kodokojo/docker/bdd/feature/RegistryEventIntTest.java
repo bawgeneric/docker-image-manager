@@ -54,6 +54,7 @@ public class RegistryEventIntTest extends ScenarioTest<ApplicationGiven<?>, Dock
         String image = "busybox:latest";
 
         given().$_is_pull(image)
+                .and().$_is_pull("java:8-jre")
                 .and().$_is_pull("registry:2")
                 .and().kodokojo_docker_image_manager_is_started()
                 .and().registry_send_notification_to_docker_image_manager()
@@ -61,13 +62,12 @@ public class RegistryEventIntTest extends ScenarioTest<ApplicationGiven<?>, Dock
 
         when().push_image_$_to_registry(image);
 
-        dockerRegistryThen
-        .then().waiting_$_seconds(15)
-        .and().attach_docker_image_manager_logs();
+        then().repository_contain_a_Dockerfile_node_of_$_image_build_with_success(image);
         dockerBuildPlanOrchestratorThen
         .and().docker_build_plan_orchestrator_NOT_contain_a_DockerBuildPlan_for_image_$(parent);
-        then().and().repository_contain_a_Dockerfile_of_$_image(image)
-        .and().repository_contain_a_Dockerfile_node_of_$_image(image);
+        dockerRegistryThen
+        //.then().waiting_$_seconds(15)
+        .and().attach_docker_image_manager_logs();
     }
 
 }

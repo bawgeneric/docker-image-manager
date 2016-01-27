@@ -35,8 +35,10 @@ import io.kodokojo.commons.docker.model.DockerFile;
 import io.kodokojo.commons.docker.model.ImageName;
 import io.kodokojo.commons.docker.model.StringToImageNameConverter;
 import io.kodokojo.docker.model.DockerFileNode;
+import io.kodokojo.docker.service.source.RestEntryPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import retrofit.RetrofitError;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -81,6 +83,7 @@ public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Abst
 
         return self();
     }
+
     public SELF repository_contain_a_Dockerfile_node_of_$_image(@Quoted String imageNameStr) {
         if (isBlank(imageNameStr)) {
             throw new IllegalArgumentException("imageNameStr must be defined.");
@@ -105,6 +108,68 @@ public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Abst
 
         return self();
     }
+    public SELF repository_contain_a_Dockerfile_node_of_$_image_build_with_success(@Quoted String imageNameStr) {
+        if (isBlank(imageNameStr)) {
+            throw new IllegalArgumentException("imageNameStr must be defined.");
+        }
+        ImageName imageName = StringToImageNameConverter.convert(imageNameStr);
 
+        if (restEntryPoint == null) {
+            String containerId = containers.get(DockerCommonsGiven.DOCKER_IMAGE_MANAGER_KEY);
+            String url = dockerClientSupport.getHttpContainerUrl(containerId, 8080);
+            restEntryPoint = provideClientRestEntryPoint(url);
+        }
+
+        DockerFileNode dockerFileNode = retriveFromRestEntrypoint(() -> restEntryPoint.getDockerFileNode(imageName.getNamespace(), imageName.getName(), imageName.getTag()), 20000);
+        LOGGER.debug("Retrive Dockerfile node for image {}: {}", imageName.getFullyQualifiedName(), dockerFileNode);
+
+        assertThat(dockerFileNode).isNotNull();
+
+        Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
+        String content = gson.toJson(dockerFileNode);
+        Attachment attachment = Attachment.plainText(content).withTitle("DockerFileNode for " +imageName.getFullyQualifiedName()).withFileName("dockerNodefile.json");
+        currentStep.addAttachment(attachment);
+
+        for(DockerFileNode child : dockerFileNode.getChildren()) {
+            assertThat(child.getLastSuccessBuild()).isNotNull();
+            assertThat(child.getLastFailBuild()).isNull();
+        }
+
+
+        return self();
+    }
+
+    //TODO Move to Commons
+    interface Callback<R> {
+        R execute();
+    }
+
+    private <T> T retriveFromRestEntrypoint(Callback<T> callback, int timeout) {
+        T res = null;
+        long end = System.currentTimeMillis() + timeout;
+        long begin = System.currentTimeMillis();
+        long now;
+        int nbTry =0;
+        do {
+            nbTry++;
+            now = System.currentTimeMillis();
+            try {
+                res = callback.execute();
+            } catch (RetrofitError retrofitError) {
+                if (retrofitError.getResponse().getStatus() != 404) {
+                    throw  retrofitError;
+                }
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        } while ((end - now > 0) && res == null);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Had following result after {} try {} millis : {}", nbTry, end - begin ,res);
+        }
+        return res;
+    }
 }
 

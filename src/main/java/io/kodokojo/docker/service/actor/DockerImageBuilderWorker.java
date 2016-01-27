@@ -56,12 +56,6 @@ public class DockerImageBuilderWorker extends AbstractActor {
         }
 
         @Override
-        public void fromImagePulled(ImageName imageName) {
-            LOGGER.info("ImageName {} Pulled.", imageName.getFullyQualifiedName());
-
-        }
-
-        @Override
         public void buildBegin(Date beginDate) {
             LOGGER.info("Build of image {} start", buildImageName.getFullyQualifiedName());
             super.buildBegin(beginDate);

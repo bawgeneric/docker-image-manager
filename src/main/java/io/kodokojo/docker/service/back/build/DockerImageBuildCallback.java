@@ -28,8 +28,6 @@ import java.util.Date;
 
 public interface DockerImageBuildCallback {
 
-    void fromImagePulled(ImageName imageName);
-
     void buildBegin(Date beginDate);
 
     void appendOutput(String output);
