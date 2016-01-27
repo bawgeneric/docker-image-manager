@@ -6,9 +6,6 @@ docker-image-manager:
     - "kodokojo-stackType=Build"
     - "kodokojo-stackName=DevA"
     - "kodokojo-componentName=docker-image-builder"
-#  environment:
-#    - DOCKER_HOST=tcp://192.168.99.100:2376
-#    - DOCKER_CERT_PATH=/Users/jpthiery/.docker/machine/machines/default
   environment:
     - DOCKER_HOST=unix:///var/run/docker.sock
   volumes:

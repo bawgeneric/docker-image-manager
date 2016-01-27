@@ -92,7 +92,7 @@ public class DefaultDockerFileBuildOrchestrator implements DockerFileBuildOrches
                     dockerFileRepository.addAllDockerFile(dockerFiles);
                     current = dockerFileRepository.getDockerFileFromImageName(imageName);
                 } else {
-                    LOGGER.error("Unable to retrieve DockerFile for image {}", imageName.getFullyQualifiedName());
+                    LOGGER.warn("Unable to retrieve DockerFile for image {}, build plan of this image aborted.", imageName.getFullyQualifiedName());
                     return null;
                 }
             }

@@ -27,13 +27,11 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import io.kodokojo.docker.service.DockerImageRepository;
 import io.kodokojo.docker.service.back.DockerFileBuildOrchestrator;
 import io.kodokojo.docker.service.back.DockerFileBuildPlanResultListener;
 import io.kodokojo.docker.service.back.build.DockerImageBuilder;
 import io.kodokojo.docker.service.actor.*;
-import io.kodokojo.docker.service.source.RestEntryPoint;
 
 import javax.inject.Named;
 
@@ -45,42 +43,42 @@ public class ActorModule extends AbstractModule {
 
 
     @Provides
-    @Singleton
+//    @Singleton
     @Named("registryRequestWorker")
     ActorRef provideRequestWorker(ActorSystem system) {
         return system.actorOf(Props.create(RegistryRequestWorker.class));
     }
 
     @Provides
-    @Singleton
-    @Named("dependencyDockerfileUpdateDispatcher")
-    ActorRef provideDependencyDockerfileUpdateDispatcher(ActorSystem system, DockerFileBuildOrchestrator orchestrator, @Named("dockerImageBuilder") ActorRef dockerImageBuilder, @Named("dockerBuildPlanResultListener") ActorRef dockerBuildPlanResultListener) {
-        return system.actorOf(Props.create(DependencyDockerfileUpdateDispatcher.class, orchestrator, dockerImageBuilder, dockerBuildPlanResultListener));
+//    @Singleton
+    @Named("dockerFileBuildPlanWorker")
+    ActorRef provideDockerFileBuildPlanWorker(ActorSystem system, DockerFileBuildOrchestrator orchestrator, @Named("dockerImageBuilder") ActorRef dockerImageBuilder, @Named("dockerBuildPlanResultListener") ActorRef dockerBuildPlanResultListener) {
+        return system.actorOf(Props.create(DockerFileBuildPlanWorker.class, orchestrator, dockerImageBuilder, dockerBuildPlanResultListener));
     }
 
     @Provides
-    @Singleton
+//    @Singleton
     @Named("dockerImageBuilder")
     ActorRef provideDockerImageBuilder(ActorSystem system, DockerImageBuilder builder) {
-        return system.actorOf(Props.create(DockerImageBuilderWorker.class, builder));
+        return system.actorOf(Props.create(DockerImageBuilderWorker.class, builder).);
     }
 
     @Provides
-    @Singleton
+//    @Singleton
     @Named("pushEventDispatcher")
     ActorRef providePushEventDispatcher(ActorSystem system, @Named("pushEventChecker") ActorRef pushEventChecker, @Named("registryRequestWorker") ActorRef registryRequestWorker) {
         return system.actorOf(Props.create(PushEventDispatcher.class, pushEventChecker, registryRequestWorker));
     }
 
     @Provides
-    @Singleton
+//    @Singleton
     @Named("pushEventChecker")
-    ActorRef providePushEventChecker(ActorSystem system, DockerImageRepository dockerImageRepository, @Named("dependencyDockerfileUpdateDispatcher") ActorRef dependencyDockerfileUpdateDispatcher) {
-        return system.actorOf(Props.create(PushEventChecker.class, dockerImageRepository, dependencyDockerfileUpdateDispatcher));
+    ActorRef providePushEventChecker(ActorSystem system, DockerImageRepository dockerImageRepository, @Named("dockerFileBuildPlanWorker") ActorRef dockerFileBuildPlanWorker) {
+        return system.actorOf(Props.create(PushEventChecker.class, dockerImageRepository, dockerFileBuildPlanWorker));
     }
 
     @Provides
-    @Singleton
+//    @Singleton
     @Named("dockerBuildPlanResultListener")
     ActorRef providePushEventChecker(ActorSystem system, DockerFileBuildPlanResultListener dockerFileBuildPlanResultListener) {
         return system.actorOf(Props.create(DockerFileBuildPlanResultWorker.class, dockerFileBuildPlanResultListener));

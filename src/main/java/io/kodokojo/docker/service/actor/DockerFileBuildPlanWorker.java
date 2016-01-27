@@ -35,19 +35,20 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-public class DependencyDockerfileUpdateDispatcher extends AbstractActor {
+public class DockerFileBuildPlanWorker extends AbstractActor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DependencyDockerfileUpdateDispatcher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DockerFileBuildPlanWorker.class);
 
     private final DockerFileBuildOrchestrator dockerFileBuildOrchestrator;
 
     @Inject
-    public DependencyDockerfileUpdateDispatcher(DockerFileBuildOrchestrator dockerFileBuildOrchestrator, @Named("dockerImageBuilder") ActorRef dockerImageBuilder, @Named("dockerBuildPlanResultListener") ActorRef dockerBuildPlanResultListener) {
+    public DockerFileBuildPlanWorker(DockerFileBuildOrchestrator dockerFileBuildOrchestrator, @Named("dockerImageBuilder") ActorRef dockerImageBuilder, @Named("dockerBuildPlanResultListener") ActorRef dockerBuildPlanResultListener) {
         if (dockerFileBuildOrchestrator == null) {
             throw new IllegalArgumentException("dockerFileBuildOrchestrator must be defined.");
         }
         this.dockerFileBuildOrchestrator = dockerFileBuildOrchestrator;
         receive(ReceiveBuilder.match(RegistryEvent.class, push -> {
+            LOGGER.info("Receive a push event for image {}", push.getImage().getName().getFullyQualifiedName());
             DockerFileBuildPlan dockerFileBuildPlan = this.dockerFileBuildOrchestrator.receiveUpdateEvent(push);
             if (dockerFileBuildPlan != null) {
                 if (LOGGER.isDebugEnabled()) {

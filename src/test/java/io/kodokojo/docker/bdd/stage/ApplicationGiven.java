@@ -96,10 +96,14 @@ public class ApplicationGiven <SELF extends ApplicationGiven<?>> extends DockerC
                 .withWorkingDir("/project")
                 .withCmd("java", "-Dproject.name=Acme", "-Dstack.name=DevA", "-Dstack.type=Build", "-Dlogback.configurationFile=/project/int-logback-config.xml", "-Dgit.bashbrew.url=git://github.com/kodokojo/acme", "-Dgit.bashbrew.library.path=bashbrew/library", "-jar", "/project/app.jar");
 
+    /*
         if (dockerConfig != null && StringUtils.isNotBlank(dockerConfig.dockerServerUrl())) {
             createContainerCmd = createContainerCmd.withEnv("DOCKER_HOST=" + dockerConfig.dockerServerUrl(), "DOCKER_CERT_PATH=" + dockerConfig.dockerCertPath());
             bind.add(new Bind(dockerConfig.dockerCertPath(), new Volume(dockerConfig.dockerCertPath())));
         }
+        */
+        createContainerCmd = createContainerCmd.withEnv("DOCKER_HOST=unix:///var/run/docker.sock");
+        bind.add(new Bind("/var/run/docker.sock", new Volume("/var/run/docker.sock")));
 
         CreateContainerResponse containerResponseId = createContainerCmd.withBinds(bind.toArray(new Bind[0])).exec();
 
