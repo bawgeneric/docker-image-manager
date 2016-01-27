@@ -1,6 +1,5 @@
 docker-image-manager:
   image: kodokojo/docker-image-builder
-  name: dckimg
   labels:
     - "kodokojo-projectName=Acme"
     - "kodokojo-stackType=Build"
