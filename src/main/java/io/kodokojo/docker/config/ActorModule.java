@@ -60,7 +60,7 @@ public class ActorModule extends AbstractModule {
 //    @Singleton
     @Named("dockerImageBuilder")
     ActorRef provideDockerImageBuilder(ActorSystem system, DockerImageBuilder builder) {
-        return system.actorOf(Props.create(DockerImageBuilderWorker.class, builder).);
+        return system.actorOf(Props.create(DockerImageBuilderWorker.class, builder));
     }
 
     @Provides
