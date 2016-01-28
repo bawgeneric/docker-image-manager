@@ -47,10 +47,11 @@ docker tag busybox:tag localhost:<EXPOSED_PORT>
 docker push localhost:<EXPOSED_PORT>
 ```
 
-# Documentation
+# Links
 
-You may find reference documentation on following [page](doc/reference.md).
-Please visit this [page](doc/architecture.md) to get details of internal architecture.
+* [Reference](doc/reference.md).
+* [REST API](doc/api.md).
+* [Architecture](doc/architecture.md).
 
 # License
 
