@@ -75,7 +75,7 @@ public class ActorModule extends AbstractModule {
 
     @Provides
     @Named("dockerBuildPlanResultListener")
-    ActorRef providePushEventChecker(ActorSystem system, DockerFileBuildPlanResultListener dockerFileBuildPlanResultListener) {
+    ActorRef provideDockerFileBuildPlanResultWorker(ActorSystem system, DockerFileBuildPlanResultListener dockerFileBuildPlanResultListener) {
         return system.actorOf(Props.create(DockerFileBuildPlanResultWorker.class, dockerFileBuildPlanResultListener));
     }
 
