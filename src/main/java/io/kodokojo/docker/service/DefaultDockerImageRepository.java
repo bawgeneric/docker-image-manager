@@ -98,10 +98,9 @@ public class DefaultDockerImageRepository implements DockerImageRepository {
         if (layer == null) {
             throw new IllegalArgumentException("layer must be defined.");
         }
-        Set<ImageName> res = repository.entrySet().stream()
+        return repository.entrySet().stream()
                 .filter(entry -> entry.getValue().contains(layer))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
-        return res;
     }
 }

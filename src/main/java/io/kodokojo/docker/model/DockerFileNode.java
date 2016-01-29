@@ -53,7 +53,7 @@ public class DockerFileNode {
         } else {
             this.children = children;
         }
-    //    this.parent = parent;
+
         this.dockerFile = dockerFile;
         if (lastUpdate == null) {
             this.lastUpdate = new Date();

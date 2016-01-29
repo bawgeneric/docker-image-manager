@@ -27,7 +27,6 @@ import io.kodokojo.commons.docker.model.ImageName;
 import io.kodokojo.docker.model.DockerFileBuildPlanResult;
 import io.kodokojo.docker.model.DockerFileBuildResponse;
 import io.kodokojo.docker.model.DockerFileNode;
-import io.kodokojo.docker.service.source.RestEntryPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,7 +86,8 @@ public class DefaultDockerFileNodeRepository implements DockerFileBuildPlanResul
                             if (LOGGER.isDebugEnabled()) {
                                 LOGGER.debug("Add child to DockerFileNode {} for imageName {}.", dockerFileNode, imageName);
                             }
-                            child = new DockerFileNode(childResponse.getDockerFileBuildRequest().getDockerFile(), null, child.getLastUpdate(), child.getLastSuccessBuild(), child.getLastFailBuild());
+                            Date now = new Date();
+                            child = new DockerFileNode(childResponse.getDockerFileBuildRequest().getDockerFile(), null, now, null, null);
                             dockerFileNode.getChildren().add(child);
                         } else {
                             if (LOGGER.isDebugEnabled()) {
@@ -126,7 +126,7 @@ public class DefaultDockerFileNodeRepository implements DockerFileBuildPlanResul
                 }
             }
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Put following entry {} = {}",imageName, dockerFileNode);
+                LOGGER.debug("Put following entry {} = {}", imageName, dockerFileNode);
             }
             index.put(imageName, dockerFileNode);
 
@@ -198,7 +198,7 @@ public class DefaultDockerFileNodeRepository implements DockerFileBuildPlanResul
         }
     }
 
-    private DockerFileNode getDockerFileNodeInSet(Set<DockerFileNode> nodes, ImageName imageName) {
+    private static DockerFileNode getDockerFileNodeInSet(Set<DockerFileNode> nodes, ImageName imageName) {
         Iterator<DockerFileNode> iterator = nodes.iterator();
         DockerFileNode res = null;
 

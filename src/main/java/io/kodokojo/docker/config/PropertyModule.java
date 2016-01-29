@@ -29,7 +29,6 @@ import io.kodokojo.commons.config.DockerConfig;
 import io.kodokojo.commons.config.KodokojoConfig;
 import io.kodokojo.commons.utils.properties.PropertyResolver;
 import io.kodokojo.commons.utils.properties.provider.*;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

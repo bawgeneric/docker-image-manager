@@ -32,8 +32,6 @@ public class ErrorWorker extends AbstractActor {
     private static final Logger LOGGER = LoggerFactory.getLogger(ErrorWorker.class);
 
     public ErrorWorker() {
-        receive(ReceiveBuilder.match(String.class, e -> {
-            LOGGER.error("An Error Occur while processing a message: {}", e);
-        }).build());
+        receive(ReceiveBuilder.match(String.class, e -> LOGGER.error("An Error Occur while processing a message: {}", e)).build());
     }
 }

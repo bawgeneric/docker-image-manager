@@ -1,4 +1,4 @@
-package io.kodokojo.docker.model;
+package io.kodokojo.docker.service.back.build;
 
 /*
  * #%L
@@ -22,11 +22,23 @@ package io.kodokojo.docker.model;
  * #L%
  */
 
-public enum HttpVerbe {
-    GET,
-    POST,
-    PUT,
-    DELETE,
-    HEAD,
-    OPTIONS
+import com.github.dockerjava.api.model.BuildResponseItem;
+import com.github.dockerjava.core.command.BuildImageResultCallback;
+
+class ResultBuildCallbackAppendOutput extends BuildImageResultCallback {
+
+    private final DockerImageBuildCallback callback;
+
+    public ResultBuildCallbackAppendOutput(DockerImageBuildCallback callback) {
+        if (callback == null) {
+            throw new IllegalArgumentException("callback must be defined.");
+        }
+        this.callback = callback;
+    }
+
+    @Override
+    public void onNext(BuildResponseItem item) {
+        callback.appendOutput(item.getStream());
+        super.onNext(item);
+    }
 }

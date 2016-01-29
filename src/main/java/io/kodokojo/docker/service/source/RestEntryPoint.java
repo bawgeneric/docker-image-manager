@@ -23,8 +23,6 @@ package io.kodokojo.docker.service.source;
  */
 
 import akka.actor.ActorRef;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import io.kodokojo.commons.docker.model.*;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
@@ -52,12 +50,11 @@ public class RestEntryPoint {
 
     private static final String JSON_CONTENT_TYPE = "application/json";
 
-    private final ThreadLocal<Gson> localGson = new ThreadLocal<Gson>() {
-        @Override
-        protected Gson initialValue() {
-            return new GsonBuilder().create();
-        }
-    };
+    private static final String NAME = ":name";
+
+    private static final String TAG = ":tag";
+
+    private static final String NAMESPACE = ":namespace";
 
     private final ResponseTransformer jsonResponseTransformer;
 
@@ -96,7 +93,7 @@ public class RestEntryPoint {
         Spark.port(8080);
 
 
-        before("/api/*", ((req, res) -> res.type(JSON_CONTENT_TYPE)));
+        before("/api/*", (req, res) -> res.type(JSON_CONTENT_TYPE));
 
         get("/api", JSON_CONTENT_TYPE, (request, response) -> {
             response.type(JSON_CONTENT_TYPE);
@@ -123,9 +120,9 @@ public class RestEntryPoint {
 
         get("/api/dockerbuildplan/:namespace/:name/:tag", JSON_CONTENT_TYPE, (request, response) -> {
 
-            String namespace = request.params(":namespace");
-            String name = request.params(":name");
-            String tag = request.params(":tag");
+            String namespace = request.params(NAMESPACE);
+            String name = request.params(NAME);
+            String tag = request.params(TAG);
 
             ImageNameBuilder builder = new ImageNameBuilder();
             builder.setNamespace(namespace);

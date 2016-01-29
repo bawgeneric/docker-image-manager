@@ -25,9 +25,6 @@ package io.kodokojo.docker.service.back.build;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.DockerClientException;
 import com.github.dockerjava.api.command.PushImageCmd;
-import com.github.dockerjava.api.model.BuildResponseItem;
-import com.github.dockerjava.core.command.BuildImageResultCallback;
-import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import io.kodokojo.commons.docker.fetcher.DockerFileProjectFetcher;
 import io.kodokojo.commons.docker.fetcher.git.GitDockerFileScmEntry;
@@ -108,16 +105,13 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
         if ("scratch".equals(imageName.getName())) {
             callback.buildFailed("we can't build image Scratch", new Date());
         } else {
-            ImageName from = dockerFile.getFrom();
             String path = String.format("/%s/%s/%s", imageName.getNamespace(), imageName.getName(), imageName.getTag());
             File currentDir = new File(workDir.getAbsolutePath() + path);
             if (!currentDir.exists()) {
                 currentDir.mkdirs();
             }
 
-
             //  TODO Try to use url option to build image instead of checkout project.
-
 
             GitDockerFileScmEntry dockerFileScmEntry = dockerFileBuildRequest.getDockerFileScmEntry();
             File projectDir = dockerFileProjectFetcher.checkoutDockerFileProject(dockerFileScmEntry);
@@ -129,13 +123,8 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
 
 
             callback.buildBegin(new Date());
-            BuildImageResultCallback resultCallback = new BuildImageResultCallback() {
-                @Override
-                public void onNext(BuildResponseItem item) {
-                    callback.appendOutput(item.getStream());
-                    super.onNext(item);
-                }
-            };
+
+
             if (LOGGER.isTraceEnabled()) {
                 File dockerFileFile = new File(dockerFileDirectory.getAbsolutePath() + File.separator + "Dockerfile");
                 try {
@@ -145,9 +134,10 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
                     LOGGER.trace("Unable to read content of Dockerfile at following path " + dockerFileFile.getAbsolutePath());
                 }
             }
+
             String imageId = null;
             try {
-                imageId = dockerClient.buildImageCmd(dockerFileDirectory).exec(resultCallback).awaitImageId();
+                imageId = dockerClient.buildImageCmd(dockerFileDirectory).exec( new ResultBuildCallbackAppendOutput(callback)).awaitImageId();
             } catch (DockerClientException e) {
                 String message = "An error occurre while trying to build image " + imageName.getFullyQualifiedName() + ".";
                 LOGGER.error(message, e);
@@ -155,7 +145,7 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
             }
             Date buildEnd = new Date();
             if (isNotBlank(imageId)) {
-                boolean res = false;
+                boolean res;
                 if (push) {
 
                     res = tagAndPushImage(imageName, imageId, callback);
@@ -178,9 +168,8 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
     private String getImageDockerCmdName(ImageName imageName, boolean push) {
         String imageNameToRegistry = imageName.getShortName();
 
-        if (StringUtils.isNotBlank(imageName.getTag())) {
+        if (StringUtils.isNotBlank(imageName.getTag()))
             imageNameToRegistry = imageNameToRegistry.substring(0, (imageNameToRegistry.length() - (imageName.getTag().length() + 1)));
-        }
         if (push) {
             String registry = imageName.getRepository();
             if (StringUtils.isBlank(registry)) {
@@ -197,12 +186,13 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
 
     private String getRegistryUrl(String registry) {
         Set<Service> registryResults = serviceLocator.getServiceByName("registry");
+        String res = registry;
         if (CollectionUtils.isNotEmpty(registryResults)) {
 
             Service service = registryResults.iterator().next();
-            registry = service.getHost() + ":" + service.getPort();
+            res = service.getHost() + ":" + service.getPort();
         }
-        return registry;
+        return res;
     }
 
     private boolean tagAndPushImage(ImageName imageName, String imageId, DockerImageBuildCallback callback) {
@@ -260,5 +250,6 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
         }
         return true;
     }
+
 
 }

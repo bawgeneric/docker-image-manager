@@ -28,13 +28,13 @@ public class RegistryEvent {
 
     public enum EventType {
         PUSH,
-        PULL;
+        PULL
     }
 
     public enum EventMethod {
         PUT,
         PULL,
-        HEAD;
+        HEAD
     }
 
     private final Date timestamp;

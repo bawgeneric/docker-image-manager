@@ -39,6 +39,10 @@ public class Launcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Launcher.class);
 
+    private Launcher() {
+        // Nothing to do.
+    }
+
     public static void main(String[] args) {
         Injector injector = Guice.createInjector( new PropertyModule(args), new StandardServiceModule(), new ActorModule(), new DockerModule());
 

@@ -45,8 +45,6 @@ public class RegistryRequestWorker extends AbstractActor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RegistryRequestWorker.class);
 
-    private static final String PUSH = "push";
-
     public static final String TARGET = "target";
 
     public static final String SIZE = "size";

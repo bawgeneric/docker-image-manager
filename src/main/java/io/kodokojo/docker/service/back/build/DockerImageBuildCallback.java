@@ -21,9 +21,6 @@ package io.kodokojo.docker.service.back.build;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
-import io.kodokojo.commons.docker.model.ImageName;
-
 import java.util.Date;
 
 public interface DockerImageBuildCallback {

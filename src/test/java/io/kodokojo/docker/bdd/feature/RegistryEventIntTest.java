@@ -27,7 +27,6 @@ import com.tngtech.jgiven.junit.ScenarioTest;
 import io.kodokojo.commons.DockerIsRequire;
 import io.kodokojo.commons.DockerPresentMethodRule;
 import io.kodokojo.docker.bdd.Registry;
-import io.kodokojo.commons.bdd.stage.docker.DockerCommonsGiven;
 import io.kodokojo.commons.bdd.stage.docker.DockerCommonsWhen;
 import io.kodokojo.commons.bdd.stage.docker.DockerRegistryThen;
 import io.kodokojo.docker.bdd.stage.ApplicationGiven;

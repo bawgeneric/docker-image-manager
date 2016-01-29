@@ -40,9 +40,7 @@ public class DockerImageBuilderWorker extends AbstractActor {
 
     public DockerImageBuilderWorker(DockerImageBuilder dockerImageBuilder) {
         receive(ReceiveBuilder.match(DockerFileBuildRequest.class, dockerFileBuildRequest -> {
-
             dockerImageBuilder.build(dockerFileBuildRequest, new WorkerDockerImageBuildCallback(dockerFileBuildRequest));
-
         }).matchAny(this::unhandled).build());
     }
 

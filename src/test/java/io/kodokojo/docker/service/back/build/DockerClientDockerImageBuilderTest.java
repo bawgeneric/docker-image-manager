@@ -24,11 +24,8 @@ package io.kodokojo.docker.service.back.build;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.BuildImageCmd;
-import com.github.dockerjava.api.command.PullImageCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.api.command.TagImageCmd;
-import com.github.dockerjava.core.command.BuildImageResultCallback;
-import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -120,7 +117,7 @@ public class DockerClientDockerImageBuilderTest {
         ArgumentCaptor<String> tagCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> pushCaptor = ArgumentCaptor.forClass(String.class);
         BuildImageCmd buildImageCmd = mock(BuildImageCmd.class);
-        BuildImageResultCallback buildImageResultCallback = mock(BuildImageResultCallback.class);
+        ResultBuildCallbackAppendOutput buildImageResultCallback = mock(ResultBuildCallbackAppendOutput.class);
         TagImageCmd tagImageCmd = mock(TagImageCmd.class);
         PushImageCmd pushImageCmd = mock(PushImageCmd.class);
         PushImageResultCallback pushImageResultCallback = mock(PushImageResultCallback.class);

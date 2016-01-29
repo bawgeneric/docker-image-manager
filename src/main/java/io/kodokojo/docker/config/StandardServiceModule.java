@@ -27,8 +27,14 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.kodokojo.commons.config.KodokojoConfig;
+import io.kodokojo.commons.docker.fetcher.DockerFileSource;
+import io.kodokojo.commons.docker.fetcher.git.GitBashbrewDockerFileSource;
+import io.kodokojo.commons.docker.fetcher.git.GitDockerFileProjectFetcher;
+import io.kodokojo.commons.utils.docker.DockerSupport;
 import io.kodokojo.commons.utils.properties.provider.PropertyValueProvider;
 import io.kodokojo.commons.utils.servicelocator.MergedServiceLocator;
+import io.kodokojo.commons.utils.servicelocator.ServiceLocator;
+import io.kodokojo.commons.utils.servicelocator.docker.DockerServiceLocator;
 import io.kodokojo.commons.utils.servicelocator.property.PropertyServiceLocator;
 import io.kodokojo.docker.service.DefaultDockerFileRepository;
 import io.kodokojo.docker.service.DefaultDockerImageRepository;
@@ -37,22 +43,11 @@ import io.kodokojo.docker.service.DockerImageRepository;
 import io.kodokojo.docker.service.back.*;
 import io.kodokojo.docker.service.back.build.DockerClientDockerImageBuilder;
 import io.kodokojo.docker.service.back.build.DockerImageBuilder;
-import io.kodokojo.commons.docker.fetcher.DockerFileSource;
-import io.kodokojo.commons.docker.fetcher.git.GitBashbrewDockerFileSource;
-import io.kodokojo.commons.docker.fetcher.git.GitDockerFileProjectFetcher;
-import io.kodokojo.commons.utils.docker.DockerSupport;
-import io.kodokojo.commons.utils.servicelocator.ServiceLocator;
-import io.kodokojo.commons.utils.servicelocator.docker.DockerServiceLocator;
-import io.kodokojo.docker.service.source.RestEntryPoint;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.LinkedList;
 
 public class StandardServiceModule extends AbstractModule {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(StandardServiceModule.class);
 
     @Override
     protected void configure() {
@@ -104,8 +99,8 @@ public class StandardServiceModule extends AbstractModule {
     @Provides
     @Singleton
     DockerImageBuilder provideDockerImageBuilder(ApplicationConfig applicationConfig, DockerClient dockerClient, GitDockerFileProjectFetcher dockerFileProjectFetcher, ServiceLocator serviceLocator) {
-        DockerClientDockerImageBuilder dockerClientDockerImageBuilder = new DockerClientDockerImageBuilder(dockerClient, new File(applicationConfig.dockerImageBuildDir()), dockerFileProjectFetcher, serviceLocator);
-        return dockerClientDockerImageBuilder;
+        return new DockerClientDockerImageBuilder(dockerClient, new File(applicationConfig.dockerImageBuildDir()), dockerFileProjectFetcher, serviceLocator);
+
     }
 
 
