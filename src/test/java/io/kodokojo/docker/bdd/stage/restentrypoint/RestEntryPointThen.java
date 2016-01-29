@@ -29,16 +29,15 @@ import com.tngtech.jgiven.annotation.ExpectedScenarioState;
 import com.tngtech.jgiven.annotation.ProvidedScenarioState;
 import com.tngtech.jgiven.annotation.Quoted;
 import com.tngtech.jgiven.attachment.Attachment;
+import io.kodokojo.commons.bdd.RetrofitEntrypointSupport;
 import io.kodokojo.docker.bdd.stage.AbstractRestStage;
 import io.kodokojo.commons.bdd.stage.docker.DockerCommonsGiven;
 import io.kodokojo.commons.docker.model.DockerFile;
 import io.kodokojo.commons.docker.model.ImageName;
 import io.kodokojo.commons.docker.model.StringToImageNameConverter;
 import io.kodokojo.docker.model.DockerFileNode;
-import io.kodokojo.docker.service.source.RestEntryPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import retrofit.RetrofitError;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -120,7 +119,7 @@ public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Abst
             restEntryPoint = provideClientRestEntryPoint(url);
         }
 
-        DockerFileNode dockerFileNode = retriveFromRestEntrypoint(() -> restEntryPoint.getDockerFileNode(imageName.getNamespace(), imageName.getName(), imageName.getTag()), 20000);
+        DockerFileNode dockerFileNode = RetrofitEntrypointSupport.retriveFromRestEntrypoint(() -> restEntryPoint.getDockerFileNode(imageName.getNamespace(), imageName.getName(), imageName.getTag()), 20000);
         LOGGER.debug("Retrive Dockerfile node for image {}: {}", imageName.getFullyQualifiedName(), dockerFileNode);
 
         assertThat(dockerFileNode).isNotNull();
@@ -135,41 +134,8 @@ public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Abst
             assertThat(child.getLastFailBuild()).isNull();
         }
 
-
         return self();
     }
 
-    //TODO Move to Commons
-    interface Callback<R> {
-        R execute();
-    }
-
-    private <T> T retriveFromRestEntrypoint(Callback<T> callback, int timeout) {
-        T res = null;
-        long end = System.currentTimeMillis() + timeout;
-        long begin = System.currentTimeMillis();
-        long now;
-        int nbTry =0;
-        do {
-            nbTry++;
-            now = System.currentTimeMillis();
-            try {
-                res = callback.execute();
-            } catch (RetrofitError retrofitError) {
-                if (retrofitError.getResponse().getStatus() != 404) {
-                    throw  retrofitError;
-                }
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        } while ((end - now > 0) && res == null);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Had following result after {} try {} millis : {}", nbTry, end - begin ,res);
-        }
-        return res;
-    }
 }
 

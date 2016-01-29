@@ -63,10 +63,10 @@ public class RegistryEventIntTest extends ScenarioTest<ApplicationGiven<?>, Dock
         when().push_image_$_to_registry(image);
 
         then().repository_contain_a_Dockerfile_node_of_$_image_build_with_success(image);
-        dockerBuildPlanOrchestratorThen
-        .and().docker_build_plan_orchestrator_NOT_contain_a_DockerBuildPlan_for_image_$(parent);
         dockerRegistryThen
         .and().attach_docker_image_manager_logs();
+        dockerBuildPlanOrchestratorThen
+        .and().docker_build_plan_orchestrator_NOT_contain_a_DockerBuildPlan_for_image_$(parent);
     }
 
 }

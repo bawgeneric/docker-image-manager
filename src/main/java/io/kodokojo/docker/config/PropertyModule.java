@@ -86,11 +86,12 @@ public class PropertyModule extends AbstractModule{
             valueProviders.add(javaArgumentPropertyValueProvider);
         }
 
-        SystemPropertyValueProvider systemPropertyValueProvider = new SystemPropertyValueProvider();
-        valueProviders.add(systemPropertyValueProvider);
 
         SystemEnvValueProvider systemEnvValueProvider = new SystemEnvValueProvider();
         valueProviders.add(systemEnvValueProvider);
+
+        SystemPropertyValueProvider systemPropertyValueProvider = new SystemPropertyValueProvider();
+        valueProviders.add(systemPropertyValueProvider);
 
         InputStream in = null;
         try {
