@@ -69,7 +69,7 @@ Run your `docker-image-manager` with the following docker command :
 ```
 docker run -p 8080 kodokojo/docker-image-manager --project.name Acme --stack.name DevA --stack.type Build --git.bashbrew.url git://github.com/kodokojo/acme --git.bashbrew.library.path=bashbrew/library
 ```
-To get more informations about properties, have a look on Reference](doc/reference.md) page.
+To get more informations about properties, have a look on [Reference](doc/reference.md) page.
 
 # Links
 
