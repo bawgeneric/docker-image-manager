@@ -19,6 +19,7 @@ We configure a [PropertyModule](/../src/main/java/io/kodokojo/docker/config/Prop
 
 When a property is query by is key, the first property value provider which find a non null value will return.
 For example, if we query the value of `git.bashbrew.url` as key, `docker-image-manager` will try to lookup :
+
 1. if JVM arguments content `--git.bashbrew.url https://github.com/kodokojo/acme`
 2. if Environment variable content `git.bashbrew.url https://github.com/kodokojo/acme` using `System.getProperty()`
 3. if System properties content value like `Dgit.bashbrew.url=https://github.com/kodokojo/acme` using `System.getenv()`
@@ -30,7 +31,7 @@ Consul and Zookeeper property provider are not yet integrate. We must defined a 
 
 `docker-image-manager` may expect to get following properties :
  
- Key                         | is mandatory       | description
+ Key                         | Is mandatory ?     | Description
  ----------------------------|--------------------|-------------------------------------
  git.bashbrew.url            | :white_check_mark: | The git url of repository which contain bashbrew library like `git://github.com/kodokojo/acme . To get more informations about bashbrew, look [docker-library](https://github.com/docker-library/official-images)
  git.bashbrew.library.path   | :white_check_mark: | The path in bashbrew git repository which contain library. 
