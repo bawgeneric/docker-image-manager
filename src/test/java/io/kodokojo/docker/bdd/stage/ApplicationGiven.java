@@ -94,7 +94,7 @@ public class ApplicationGiven <SELF extends ApplicationGiven<?>> extends DockerC
                 .withExposedPorts(exposedPort)
                 .withLabels(labels)
                 .withWorkingDir("/project")
-                .withCmd("java", "-Dproject.name=Acme", "-Dstack.name=DevA", "-Dstack.type=Build", "-Dlogback.configurationFile=/project/int-logback-config.xml", "-Dgit.bashbrew.url=git://github.com/kodokojo/acme", "-Dgit.bashbrew.library.path=bashbrew/library", "-jar", "/project/app.jar");
+                .withCmd("java","-Dproject.name=Acme", "-Dstack.name=DevA", "-Dstack.type=Build", "-Dlogback.configurationFile=/project/int-logback-config.xml", "-Dgit.bashbrew.url=git://github.com/kodokojo/acme", "-Dgit.bashbrew.library.path=bashbrew/library", "-jar", "/project/app.jar");
 
     /*
         if (dockerConfig != null && StringUtils.isNotBlank(dockerConfig.dockerServerUrl())) {

@@ -27,6 +27,9 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.kodokojo.commons.config.KodokojoConfig;
+import io.kodokojo.commons.utils.properties.provider.PropertyValueProvider;
+import io.kodokojo.commons.utils.servicelocator.MergedServiceLocator;
+import io.kodokojo.commons.utils.servicelocator.property.PropertyServiceLocator;
 import io.kodokojo.docker.service.DefaultDockerFileRepository;
 import io.kodokojo.docker.service.DefaultDockerImageRepository;
 import io.kodokojo.docker.service.DockerFileRepository;
@@ -45,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.LinkedList;
 
 public class StandardServiceModule extends AbstractModule {
 
@@ -90,8 +94,11 @@ public class StandardServiceModule extends AbstractModule {
 
     @Provides
     @Singleton
-    ServiceLocator provideServiceLocator(DockerSupport dockerSupport, KodokojoConfig kodokojoConfig) {
-        return new DockerServiceLocator(dockerSupport, kodokojoConfig);
+    ServiceLocator provideServiceLocator(DockerSupport dockerSupport, KodokojoConfig kodokojoConfig, PropertyValueProvider propertyValueProvider) {
+        LinkedList<ServiceLocator> serviceLocators = new LinkedList<>();
+        serviceLocators.add(new PropertyServiceLocator(propertyValueProvider));
+        serviceLocators.add(new DockerServiceLocator(dockerSupport, kodokojoConfig));
+        return new MergedServiceLocator(serviceLocators);
     }
 
     @Provides

@@ -76,7 +76,7 @@ Please, read following [Contribution page](CONTRIBUTE.md)
 
 ## Supported
 * Consul
-* Zoo
+* Zookeeper
 
 Thanks to all those Open source project !
 

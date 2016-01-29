@@ -36,4 +36,10 @@ public interface ApplicationConfig extends PropertyConfig {
     @Key("dockerFile.buildDir")
     String dockerImageBuildDir();
 
+    @Key("registry.host")
+    String registryHost();
+
+    @Key("registry.port")
+    Integer registryPort();
+
 }
