@@ -11,7 +11,7 @@
 * Zookeeper
 
 A property value aggregator could mix several way to access to a value for a given key.
-We configure a [PropertyModule](/../src/main/java/io/kodokojo/docker/config/PropertyModule.java) which provide property in this order :
+We configure a [PropertyModule](../src/main/java/io/kodokojo/docker/config/PropertyModule.java) which provide property in this order :
 * Arguments passed to JVM
 * Environment variable
 * System properties
@@ -21,9 +21,9 @@ When a property is query by is key, the first property value provider which find
 For example, if we query the value of `git.bashbrew.url` as key, `docker-image-manager` will try to lookup :
 
 1. if JVM arguments content `--git.bashbrew.url https://github.com/kodokojo/acme`
-2. if Environment variable content `git.bashbrew.url https://github.com/kodokojo/acme` using `System.getProperty()`
-3. if System properties content value like `Dgit.bashbrew.url=https://github.com/kodokojo/acme` using `System.getenv()`
-4. if property file `applicationConfiguration.properties`content a line like `git.bashbrew.url=https://github.com/kodokojo/acme`
+2. if Environment variable content value using `System.getProperty()`
+3. if System properties content value `System.getenv()`
+4. if property file `applicationConfiguration.properties` content a line like `git.bashbrew.url=https://github.com/kodokojo/acme`
 
 Consul and Zookeeper property provider are not yet integrate. We must defined a property provider selector configurable.
 
