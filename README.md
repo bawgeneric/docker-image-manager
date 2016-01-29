@@ -34,11 +34,12 @@ mvn -P docker clean verify
 The `-P docker` will activate the Maven profile `docker` which build the docker image `kodokojo/docker-image-manager`. 
 
 ## Run
+
+### Trial
 The following command will launch a Docker Registry v2 container and a `kodokojo/docker-image-manager` container.
 ```
 docker-compose -f src/test/resources/docker-compose.yml -p dckomgmgt up -d
 ```
-
 
 To trigger a build to trial :
 ```
@@ -46,6 +47,29 @@ docker pull busybox:latest
 docker tag busybox:tag localhost:<EXPOSED_PORT>
 docker push localhost:<EXPOSED_PORT>
 ```
+
+### General case
+You must configure your Docker registry to notify `docker-image-manager`. As explain [here](https://docs.docker.com/registry/configuration/#notifications), you may add following entries :
+
+```yaml
+notifications:
+ endpoints:
+   - name: kodokojoDockerImageManager
+     url: http://dockerimagemanager:8080/registry/events
+     headers:
+       Authorization: [Registry]
+     timeout: 500ms
+     threshold: 5
+     backoff: 1s
+``` 
+Replace the `dockerimagemanager:8080` ip/port by the ip/port of our `docker-image-manager` instance.
+
+Run your `docker-image-manager` with the following docker command :
+ 
+```
+docker run -p 8080 kodokojo/docker-image-manager --project.name Acme --stack.name DevA --stack.type Build --git.bashbrew.url git://github.com/kodokojo/acme --git.bashbrew.library.path=bashbrew/library
+```
+To get more informations about properties, have a look on Reference](doc/reference.md) page.
 
 # Links
 
