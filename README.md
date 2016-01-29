@@ -49,6 +49,14 @@ docker push localhost:<EXPOSED_PORT>
 ```
 
 ### General case
+
+Run your `docker-image-manager` with the following docker command :
+ 
+```
+docker run -p 8080 kodokojo/docker-image-manager --project.name Acme --stack.name DevA --stack.type Build --git.bashbrew.url git://github.com/kodokojo/acme --git.bashbrew.library.path=bashbrew/library
+```
+To get more informations about properties, have a look on [Reference](doc/reference.md) page.
+
 You must configure your Docker registry to notify `docker-image-manager`. As explain [here](https://docs.docker.com/registry/configuration/#notifications), you may add following entries :
 
 ```yaml
@@ -63,13 +71,6 @@ notifications:
      backoff: 1s
 ``` 
 Replace the `dockerimagemanager:8080` ip/port by the ip/port of our `docker-image-manager` instance.
-
-Run your `docker-image-manager` with the following docker command :
- 
-```
-docker run -p 8080 kodokojo/docker-image-manager --project.name Acme --stack.name DevA --stack.type Build --git.bashbrew.url git://github.com/kodokojo/acme --git.bashbrew.library.path=bashbrew/library
-```
-To get more informations about properties, have a look on [Reference](doc/reference.md) page.
 
 # Links
 
