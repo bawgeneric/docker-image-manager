@@ -40,4 +40,6 @@ Consul and Zookeeper property provider are not yet integrate. We must defined a 
  stack.type                  | :white_check_mark: | Used in kodokojo to register service
  registry.host               |                    | The registry host/ip. If not defined, lookup on docker-engine for container with kodokojo labels with match with this kodokojo component.
  registry.port               |                    | The registry port. If not defined, lookup on docker-engine for container with kodokojo labels with match with this kodokojo component.
- 
+ workspace                   |                    | Path to a directory which will be used as work directory. Be default, defined to `workspace`
+ dockerFileProject           |                    | Path inner `workspace` directory to checkout Dockerfile
+ dockerFile.buildDir         |                    | Path inner `workspace` directory to build Dockerfile
