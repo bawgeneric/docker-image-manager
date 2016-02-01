@@ -35,6 +35,7 @@ import io.kodokojo.docker.service.back.DockerFileNodeRepository;
 import io.kodokojo.docker.utils.JsonTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import spark.Request;
 import spark.ResponseTransformer;
 import spark.Spark;
 
@@ -120,15 +121,7 @@ public class RestEntryPoint {
 
         get("/api/dockerbuildplan/:namespace/:name/:tag", JSON_CONTENT_TYPE, (request, response) -> {
 
-            String namespace = request.params(NAMESPACE);
-            String name = request.params(NAME);
-            String tag = request.params(TAG);
-
-            ImageNameBuilder builder = new ImageNameBuilder();
-            builder.setNamespace(namespace);
-            builder.setName(name);
-            builder.setTag(tag);
-            ImageName imageName = builder.build();
+            ImageName imageName = getImageNameFromRequest(request);
 
             DockerFileBuildPlan dockerFileBuildPlan = dockerFileBuildOrchestrator.getBuildPlan(imageName);
 
@@ -146,15 +139,7 @@ public class RestEntryPoint {
 
         get("/api/repository/:namespace/:name/:tag", JSON_CONTENT_TYPE, (request, response) -> {
 
-            String namespace = request.params(":namespace");
-            String name = request.params(":name");
-            String tag = request.params(":tag");
-
-            ImageNameBuilder builder = new ImageNameBuilder();
-            builder.setNamespace(namespace);
-            builder.setName(name);
-            builder.setTag(tag);
-            ImageName imageName = builder.build();
+            ImageName imageName = getImageNameFromRequest(request);
             DockerFile dockerFile = dockerFileRepository.getDockerFileFromImageName(imageName);
 
             if (LOGGER.isTraceEnabled()) {
@@ -171,15 +156,7 @@ public class RestEntryPoint {
 
         get("/api/dockernode/:namespace/:name/:tag", JSON_CONTENT_TYPE, (request, response) -> {
 
-            String namespace = request.params(":namespace");
-            String name = request.params(":name");
-            String tag = request.params(":tag");
-
-            ImageNameBuilder builder = new ImageNameBuilder();
-            builder.setNamespace(namespace);
-            builder.setName(name);
-            builder.setTag(tag);
-            ImageName imageName = builder.build();
+            ImageName imageName = getImageNameFromRequest(request);
 
             DockerFileNode dockerFileNode = dockerFileNodeRepository.getDockerFileNode(imageName);
 
@@ -201,6 +178,18 @@ public class RestEntryPoint {
     public void stop() {
         LOGGER.info("Stopping registry listener");
         Spark.stop();
+    }
+
+    private static ImageName getImageNameFromRequest(Request request) {
+        String namespace = request.params(NAMESPACE);
+        String name = request.params(NAME);
+        String tag = request.params(TAG);
+
+        ImageNameBuilder builder = new ImageNameBuilder();
+        builder.setNamespace(namespace);
+        builder.setName(name);
+        builder.setTag(tag);
+        return builder.build();
     }
 
 }
