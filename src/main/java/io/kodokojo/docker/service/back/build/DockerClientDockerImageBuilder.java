@@ -76,7 +76,10 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
         this.workDir = workDir;
 
         if (!workDir.exists()) {
-            workDir.mkdirs();
+            boolean workDirCreated = workDir.mkdirs();
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.info("Working diretory {} {}", workDir.getAbsolutePath(), workDirCreated ? "created" : "Not created");
+            }
         }
         if (!workDir.exists() || !workDir.isDirectory() || !workDir.canWrite()) {
             throw new IllegalStateException("Unable to write in directory " + workDir.getAbsolutePath());
@@ -115,8 +118,8 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
 
             GitDockerFileScmEntry dockerFileScmEntry = dockerFileBuildRequest.getDockerFileScmEntry();
             File projectDir = dockerFileProjectFetcher.checkoutDockerFileProject(dockerFileScmEntry);
-            if (projectDir == null || !projectDir.canRead()) {
-                String message = String.format("Unable to read directory for project %s at following path '%s'", dockerFile.getImageName().getFullyQualifiedName(), projectDir.getAbsolutePath());
+            if (!projectDir.canRead()) {
+                String message = String.format("Unable to read directory for project %s at following path '%s'", dockerFile.getImageName().getFullyQualifiedName(),projectDir.getAbsolutePath());
                 throw new IllegalStateException(message);
             }
             File dockerFileDirectory = new File(projectDir.getAbsolutePath() + File.separator + dockerFileScmEntry.getDockerFilePath());

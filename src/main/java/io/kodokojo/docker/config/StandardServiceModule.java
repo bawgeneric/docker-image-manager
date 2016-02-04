@@ -60,7 +60,7 @@ public class StandardServiceModule extends AbstractModule {
     @Singleton
     DockerFileSource provideDockerFileSource(GitDockerFileProjectFetcher gitDockerFileProjectFetcher, GitBashbrewConfig gitBashbrewConfig, ApplicationConfig applicationConfig) {
         String workspace = applicationConfig.workspace();
-        return new GitBashbrewDockerFileSource(workspace, null, gitBashbrewConfig.bashbrewGitUrl(), gitBashbrewConfig.bashbrewLibraryPath(), gitDockerFileProjectFetcher);
+        return new GitBashbrewDockerFileSource(workspace, gitBashbrewConfig.bashbrewGitUrl(), gitBashbrewConfig.bashbrewLibraryPath(), gitDockerFileProjectFetcher);
     }
 
     @Provides
