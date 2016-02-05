@@ -5,6 +5,7 @@
 # Process details
 
 ![Process details](/doc/docker-image-manager_process.png)
+
 1. Receive a push event notification from Docker registry
 2. Send the Rest event to a [RegistryRequestWorker](/src/main/java/io/kodokojo/docker/service/actor/RegistryRequestWorker.java)
 3. which may produce an [RegistryEvent](/src/main/java/io/kodokojo/docker/model/RegistryEvent.java)
