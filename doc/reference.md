@@ -33,7 +33,7 @@ Consul and Zookeeper property provider are not yet integrate. We must defined a 
  
  Key                         | Is mandatory ?     | Description
  ----------------------------|--------------------|-------------------------------------
- git.bashbrew.url            | :white_check_mark: | The git url of repository which contain bashbrew library like `git://github.com/kodokojo/acme . To get more informations about bashbrew, look [docker-library](https://github.com/docker-library/official-images)
+ git.bashbrew.url            | :white_check_mark: | The git url of repository which contain bashbrew library like `git://github.com/kodokojo/acme` . To get more informations about bashbrew, look [docker-library](https://github.com/docker-library/official-images)
  git.bashbrew.library.path   | :white_check_mark: | The path in bashbrew git repository which contain library. 
  project.name                | :white_check_mark: | Used in kodokojo to register service
  stack.name                  | :white_check_mark: | Used in kodokojo to register service
