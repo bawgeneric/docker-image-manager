@@ -41,12 +41,12 @@ public class PushEventDispatcher extends AbstractActor {
     @Inject
     public PushEventDispatcher(@Named("pushEventChecker") ActorRef pushEventChecker,@Named("registryRequestWorker")  ActorRef registryRequestWorker) {
 
-        receive(ReceiveBuilder.match(RegistryEvent.class, push -> {
+        receive(ReceiveBuilder.match(RegistryEvent.class, registryEvent -> {
             if (LOGGER.isDebugEnabled()) {
                 ActorRef pushPrinter = getContext().actorOf(Props.create(PushPrinter.class));
-                pushPrinter.tell(push, self());
+                pushPrinter.tell(registryEvent, self());
             }
-            pushEventChecker.tell(push, self());
+            pushEventChecker.tell(registryEvent, self());
                 })
                         .match(RestRequest.class, request -> {
                             if (LOGGER.isDebugEnabled()) {

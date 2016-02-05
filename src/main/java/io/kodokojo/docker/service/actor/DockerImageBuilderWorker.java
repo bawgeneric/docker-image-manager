@@ -39,9 +39,9 @@ public class DockerImageBuilderWorker extends AbstractActor {
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerImageBuilderWorker.class);
 
     public DockerImageBuilderWorker(DockerImageBuilder dockerImageBuilder) {
-        receive(ReceiveBuilder.match(DockerFileBuildRequest.class, dockerFileBuildRequest -> {
-            dockerImageBuilder.build(dockerFileBuildRequest, new WorkerDockerImageBuildCallback(dockerFileBuildRequest));
-        }).matchAny(this::unhandled).build());
+        receive(ReceiveBuilder
+                .match(DockerFileBuildRequest.class,dockerFileBuildRequest -> dockerImageBuilder.build(dockerFileBuildRequest, new WorkerDockerImageBuildCallback(dockerFileBuildRequest)))
+                .matchAny(this::unhandled).build());
     }
 
     private class WorkerDockerImageBuildCallback extends AbstractBuildRequestDockerImageBuildCallback {

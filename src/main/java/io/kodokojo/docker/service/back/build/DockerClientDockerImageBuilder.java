@@ -163,7 +163,6 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
                 callback.buildFailed("Not able to build Docker image " + imageName.getFullyQualifiedName(), buildEnd);
             }
 
-
         }
 
     }
@@ -171,8 +170,10 @@ public class DockerClientDockerImageBuilder implements DockerImageBuilder {
     private String getImageDockerCmdName(ImageName imageName, boolean push) {
         String imageNameToRegistry = imageName.getShortName();
 
-        if (StringUtils.isNotBlank(imageName.getTag()))
-            imageNameToRegistry = imageNameToRegistry.substring(0, (imageNameToRegistry.length() - (imageName.getTag().length() + 1)));
+        if (StringUtils.isNotBlank(imageName.getTag())) {
+            int endIndex = imageNameToRegistry.length() - (imageName.getTag().length() + 1);
+            imageNameToRegistry = imageNameToRegistry.substring(0, endIndex);
+        }
         if (push) {
             String registry = imageName.getRepository();
             if (StringUtils.isBlank(registry)) {

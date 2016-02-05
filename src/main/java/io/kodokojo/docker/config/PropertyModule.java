@@ -62,21 +62,7 @@ public class PropertyModule extends AbstractModule{
         LinkedList<PropertyValueProvider> valueProviders = new LinkedList<>();
         OrderedMergedValueProvider valueProvider = new OrderedMergedValueProvider(valueProviders);
 
-        AbstarctStringPropertyValueProvider workSpaceValueProvider = new AbstarctStringPropertyValueProvider() {
-            @Override
-            protected String provideValue(String key) {
-                File baseDire = new File("");
-                String workspace = baseDire.getAbsolutePath() + File.separator + "workspace";
-                if ("workspace".equals(key)) {
-                    return workspace;
-                } else if ("dockerFileProject".equals(key)) {
-                    return workspace + File.separator + "dockerfileProjects";
-                } else if ("dockerFile.buildDir".equals(key)) {
-                    return workspace + File.separator + "dockerImage" + File.separator + "build";
-                }
-                return null;
-            }
-        };
+        WorkspacePropertyValueProvider workSpaceValueProvider = new WorkspacePropertyValueProvider();
 
         valueProviders.add(workSpaceValueProvider);
 
@@ -134,6 +120,27 @@ public class PropertyModule extends AbstractModule{
     KodokojoConfig provideKodokojoConfig(PropertyValueProvider valueProvider) {
         PropertyResolver propertyResolver = new PropertyResolver(valueProvider);
         return propertyResolver.createProxy(KodokojoConfig.class);
+    }
+
+    private class WorkspacePropertyValueProvider extends AbstarctStringPropertyValueProvider {
+
+        private WorkspacePropertyValueProvider() {
+            //  Internal use only.
+        }
+
+        @Override
+        protected String provideValue(String key) {
+            File baseDire = new File("");
+            String workspace = baseDire.getAbsolutePath() + File.separator + "workspace";
+            if ("workspace".equals(key)) {
+                return workspace;
+            } else if ("dockerFileProject".equals(key)) {
+                return workspace + File.separator + "dockerfileProjects";
+            } else if ("dockerFile.buildDir".equals(key)) {
+                return workspace + File.separator + "dockerImage" + File.separator + "build";
+            }
+            return null;
+        }
     }
 
 }

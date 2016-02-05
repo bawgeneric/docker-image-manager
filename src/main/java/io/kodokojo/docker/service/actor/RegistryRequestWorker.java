@@ -63,34 +63,6 @@ public class RegistryRequestWorker extends AbstractActor {
 
     public static final String METHOD = "method";
 
-    @Inject
-    public RegistryRequestWorker() {
-        JsonParser parser = new JsonParser();
-        receive(ReceiveBuilder
-                .match(RestRequest.class, request -> {
-                    JsonElement jsonElement = parser.parse(request.getBody());
-                    JsonArray events = jsonElement.getAsJsonObject().getAsJsonArray(EVENTS);
-
-                    for (JsonElement eventElement : events) {
-                        JsonObject jsObjEvent = eventElement.getAsJsonObject();
-                        RegistryEvent registryEvent = PUSH_EVENT_FUNCTION.apply(jsObjEvent);
-                        if (registryEvent.getMethod().equals(RegistryEvent.EventMethod.PUT)
-                                && registryEvent.getType().equals(RegistryEvent.EventType.PUSH)
-                                && registryEvent.getUrl().contains(registryEvent.getImage().getName().getShortNameWithoutTag() + "/manifests/")) {
-
-                            sender().tell(registryEvent, self());
-
-                            if (LOGGER.isDebugEnabled()) {
-                                LOGGER.debug("Receive a registry event which may start a build: {}", registryEvent);
-                            }
-                        } else if (LOGGER.isDebugEnabled()){
-                            LOGGER.debug("The following registryEvent is ignored :{}", registryEvent);
-                        }
-
-                    }
-                })
-                .matchAny(this::unhandled).build());
-    }
 
     private static final Function<JsonObject, RegistryEvent> PUSH_EVENT_FUNCTION = event -> {
         JsonObject target = event.getAsJsonObject(TARGET);
@@ -107,5 +79,35 @@ public class RegistryRequestWorker extends AbstractActor {
         ImageName name = new StringToImageNameConverter().apply(target.getAsJsonPrimitive(REPOSITORY).getAsString());
         return new RegistryEvent(new Date(), eventType, method, null, new Image(name, new ArrayList<>()), layer, url);
     };
+
+    @Inject
+    public RegistryRequestWorker() {
+        JsonParser parser = new JsonParser();
+        receive(ReceiveBuilder
+                .match(RestRequest.class, request -> {
+                    JsonElement jsonElement = parser.parse(request.getBody());
+                    JsonArray events = jsonElement.getAsJsonObject().getAsJsonArray(EVENTS);
+                    for (JsonElement eventElement : events) {
+                        JsonObject jsObjEvent = eventElement.getAsJsonObject();
+                        RegistryEvent registryEvent = PUSH_EVENT_FUNCTION.apply(jsObjEvent);
+                        if (isExpectedRegistryEvent(registryEvent)) {
+                            sender().tell(registryEvent, self());
+                            if (LOGGER.isDebugEnabled()) {
+                                LOGGER.debug("Receive a registry event which may start a build: {}", registryEvent);
+                            }
+                        } else if (LOGGER.isDebugEnabled()){
+                            LOGGER.debug("The following registryEvent is ignored :{}", registryEvent);
+                        }
+                    }
+                })
+                .matchAny(this::unhandled).build());
+    }
+
+    private static boolean isExpectedRegistryEvent(RegistryEvent registryEvent) {
+        assert registryEvent != null : "registryEvent must be defined.";
+        return registryEvent.getMethod().equals(RegistryEvent.EventMethod.PUT)
+                && registryEvent.getType().equals(RegistryEvent.EventType.PUSH)
+                && registryEvent.getUrl().contains(registryEvent.getImage().getName().getShortNameWithoutTag() + "/manifests/");
+    }
 
 }
