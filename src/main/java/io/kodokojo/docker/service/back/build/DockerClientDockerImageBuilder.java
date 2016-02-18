@@ -30,7 +30,7 @@ import io.kodokojo.commons.docker.fetcher.DockerFileProjectFetcher;
 import io.kodokojo.commons.docker.fetcher.git.GitDockerFileScmEntry;
 import io.kodokojo.commons.docker.model.DockerFile;
 import io.kodokojo.commons.docker.model.ImageName;
-import io.kodokojo.commons.utils.servicelocator.Service;
+import io.kodokojo.commons.project.model.Service;
 import io.kodokojo.commons.utils.servicelocator.ServiceLocator;
 import io.kodokojo.docker.model.DockerFileBuildRequest;
 import org.apache.commons.collections4.CollectionUtils;

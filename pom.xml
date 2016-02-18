@@ -9,6 +9,7 @@
     <version>0.1.0-SNAPSHOT</version>
     <name>docker-image-manager</name>
     <description>Docker image builder orchestrator</description>
+    <url>http://kodokojo.io</url>
 
     <scm>
         <connection>scm:git:git@github.com:kodokojo/docker-image-manager.git</connection>
@@ -138,9 +139,8 @@
 
         <dependency>
             <groupId>io.kodokojo</groupId>
-            <artifactId>commons</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <classifier>tests</classifier>
+            <artifactId>kodokojo-commons-tests</artifactId>
+            <version>0.1.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>

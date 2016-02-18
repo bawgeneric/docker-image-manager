@@ -92,12 +92,6 @@ public class ApplicationGiven <SELF extends ApplicationGiven<?>> extends DockerC
                 .withWorkingDir("/project")
                 .withCmd("java","-Dproject.name=Acme", "-Dstack.name=DevA", "-Dstack.type=Build", "-Dlogback.configurationFile=/project/int-logback-config.xml", "-Dgit.bashbrew.url=git://github.com/kodokojo/acme", "-Dgit.bashbrew.library.path=bashbrew/library", "-jar", "/project/app.jar");
 
-    /*
-        if (dockerConfig != null && StringUtils.isNotBlank(dockerConfig.dockerServerUrl())) {
-            createContainerCmd = createContainerCmd.withEnv("DOCKER_HOST=" + dockerConfig.dockerServerUrl(), "DOCKER_CERT_PATH=" + dockerConfig.dockerCertPath());
-            bind.add(new Bind(dockerConfig.dockerCertPath(), new Volume(dockerConfig.dockerCertPath())));
-        }
-        */
         createContainerCmd = createContainerCmd.withEnv("DOCKER_HOST=unix:///var/run/docker.sock");
         bind.add(new Bind("/var/run/docker.sock", new Volume("/var/run/docker.sock")));
 
@@ -112,7 +106,7 @@ public class ApplicationGiven <SELF extends ApplicationGiven<?>> extends DockerC
         String url = dockerClientSupport.getHttpContainerUrl(containerId, 8080) + "/api";
 
         int timeout = 14000;
-        boolean available = dockerClientSupport.waitUntilHttpRequestRespond(url, timeout);
+        boolean available = dockerSupport.waitUntilHttpRequestRespond(url, timeout);
         if (!available) {
             throw new IllegalStateException("Unable to obtain an available Docker image manager after " + timeout);
         }
@@ -150,7 +144,7 @@ public class ApplicationGiven <SELF extends ApplicationGiven<?>> extends DockerC
         Ports.Binding[] bindingsExposed = bindings.get(ExposedPort.tcp(5000));
         registryPort = bindingsExposed[0].getHostPort();
         String url = dockerClientSupport.getHttpContainerUrl(registryCmd.getId(), 5000) + "/v2/";
-        dockerClientSupport.waitUntilHttpRequestRespond(url, 2500);
+        dockerSupport.waitUntilHttpRequestRespond(url, 2500);
         return self();
     }
 

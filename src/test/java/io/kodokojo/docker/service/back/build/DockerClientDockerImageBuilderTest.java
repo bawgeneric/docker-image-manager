@@ -30,10 +30,12 @@ import com.github.dockerjava.core.command.PushImageResultCallback;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.kodokojo.commons.docker.model.*;
 import io.kodokojo.commons.docker.fetcher.DockerFileProjectFetcher;
 import io.kodokojo.commons.docker.fetcher.git.GitDockerFileScmEntry;
-import io.kodokojo.commons.utils.servicelocator.Service;
+import io.kodokojo.commons.docker.model.DockerFile;
+import io.kodokojo.commons.docker.model.ImageName;
+import io.kodokojo.commons.docker.model.StringToImageNameConverter;
+import io.kodokojo.commons.project.model.Service;
 import io.kodokojo.commons.utils.servicelocator.ServiceLocator;
 import io.kodokojo.docker.model.DockerFileBuildRequest;
 import org.apache.commons.lang.StringUtils;
@@ -75,12 +77,12 @@ public class DockerClientDockerImageBuilderTest {
     @DataProvider
     public static Object[][] dataProviderAdd() {
         // @formatter:off
-        return new Object[][] {
-                { "jpthiery/busybox", "centos:latest", "registry.docker.kodokojo.io", 5000, "registry.docker.kodokojo.io:5000/jpthiery/busybox", "centos:latest", "latest", true },
-                { "jpthiery/busybox:dev", "centos", "registry.docker.kodokojo.io", 5000, "registry.docker.kodokojo.io:5000/jpthiery/busybox", "centos:latest", "dev", true },
-                { "jpthiery/busybox", "centos:latest", null, 0, "jpthiery/busybox", "centos:latest", "latest", false },
-                { "jpthiery/busybox", "centos", null, 0, "jpthiery/busybox", "centos:latest", "latest", false },
-                { "jpthiery/busybox:1.0.0", "centos:7", null, 0, "jpthiery/busybox", "centos:7", "1.0.0", false }
+        return new Object[][]{
+                {"jpthiery/busybox", "centos:latest", "registry.docker.kodokojo.io", 5000, "registry.docker.kodokojo.io:5000/jpthiery/busybox", "centos:latest", "latest", true},
+                {"jpthiery/busybox:dev", "centos", "registry.docker.kodokojo.io", 5000, "registry.docker.kodokojo.io:5000/jpthiery/busybox", "centos:latest", "dev", true},
+                {"jpthiery/busybox", "centos:latest", null, 0, "jpthiery/busybox", "centos:latest", "latest", false},
+                {"jpthiery/busybox", "centos", null, 0, "jpthiery/busybox", "centos:latest", "latest", false},
+                {"jpthiery/busybox:1.0.0", "centos:7", null, 0, "jpthiery/busybox", "centos:7", "1.0.0", false}
         };
         // @formatter:on
     }
@@ -126,7 +128,7 @@ public class DockerClientDockerImageBuilderTest {
         when(buildImageCmd.exec(any())).thenReturn(buildImageResultCallback);
         when(buildImageResultCallback.awaitImageId()).thenReturn("123456");
 
-        when(dockerClient.tagImageCmd(tagImageNameIdCaptor.capture(), tagRegistryCaptor.capture(),tagCaptor.capture())).thenReturn(tagImageCmd);
+        when(dockerClient.tagImageCmd(tagImageNameIdCaptor.capture(), tagRegistryCaptor.capture(), tagCaptor.capture())).thenReturn(tagImageCmd);
         when(tagImageCmd.withForce()).thenReturn(tagImageCmd);
         when(tagImageCmd.withTag(any())).thenReturn(tagImageCmd);
         if (pushed) {
@@ -180,7 +182,7 @@ public class DockerClientDockerImageBuilderTest {
 
         @Override
         public void appendOutput(String output) {
-            LOGGER.debug("Output : {}",  output);
+            LOGGER.debug("Output : {}", output);
         }
     }
 }

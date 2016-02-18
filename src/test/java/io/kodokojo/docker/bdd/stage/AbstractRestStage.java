@@ -27,8 +27,8 @@ import com.google.gson.GsonBuilder;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
 import io.kodokojo.commons.docker.model.DockerFile;
+import io.kodokojo.commons.utils.DockerTestSupport;
 import io.kodokojo.docker.model.DockerFileBuildPlan;
-import io.kodokojo.commons.utils.DockerClientSupport;
 import io.kodokojo.docker.model.DockerFileNode;
 import retrofit.RestAdapter;
 import retrofit.converter.GsonConverter;
@@ -38,10 +38,10 @@ import retrofit.http.Path;
 public abstract class AbstractRestStage<SELF extends AbstractRestStage<?>> extends Stage<SELF> {
 
     @ExpectedScenarioState
-    protected DockerClientSupport dockerClientSupport;
+    protected DockerTestSupport dockerTestSupport;
 
     protected ClientRestEntryPoint provideClientRestEntryPoint(String containerId, int port) {
-        String baseUrl = dockerClientSupport.getHttpContainerUrl(containerId, port);
+        String baseUrl = dockerTestSupport.getHttpContainerUrl(containerId, port);
         return  provideClientRestEntryPoint(baseUrl);
     }
 

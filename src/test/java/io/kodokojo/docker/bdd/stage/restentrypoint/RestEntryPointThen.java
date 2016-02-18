@@ -66,7 +66,7 @@ public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Abst
 
         if (restEntryPoint == null) {
             String containerId = containers.get(DockerCommonsGiven.DOCKER_IMAGE_MANAGER_KEY);
-            String url = dockerClientSupport.getHttpContainerUrl(containerId, 8080);
+            String url = dockerTestSupport.getHttpContainerUrl(containerId, 8080);
             restEntryPoint = provideClientRestEntryPoint(url);
         }
 
@@ -91,7 +91,7 @@ public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Abst
 
         if (restEntryPoint == null) {
             String containerId = containers.get(DockerCommonsGiven.DOCKER_IMAGE_MANAGER_KEY);
-            String url = dockerClientSupport.getHttpContainerUrl(containerId, 8080);
+            String url = dockerTestSupport.getHttpContainerUrl(containerId, 8080);
             restEntryPoint = provideClientRestEntryPoint(url);
         }
 
@@ -115,7 +115,7 @@ public class RestEntryPointThen<SELF extends RestEntryPointThen<?>> extends Abst
 
         if (restEntryPoint == null) {
             String containerId = containers.get(DockerCommonsGiven.DOCKER_IMAGE_MANAGER_KEY);
-            String url = dockerClientSupport.getHttpContainerUrl(containerId, 8080);
+            String url = dockerTestSupport.getHttpContainerUrl(containerId, 8080);
             restEntryPoint = provideClientRestEntryPoint(url);
         }
 
