@@ -72,6 +72,7 @@ public class DockerCommonsGiven<SELF extends DockerCommonsGiven<?>> extends Stag
 
                 propertyValueProviders.add(new SystemPropertyValueProvider());
                 propertyValueProviders.add(new SystemEnvValueProvider());
+
                 OrderedMergedValueProvider valueProvider = new OrderedMergedValueProvider(propertyValueProviders);
                 PropertyResolver resolver = new PropertyResolver(new DockerConfigValueProvider(valueProvider));
                 bind(DockerConfig.class).toInstance(resolver.createProxy(DockerConfig.class));

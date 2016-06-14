@@ -71,7 +71,6 @@ public class PropertyModule extends AbstractModule{
             valueProviders.add(javaArgumentPropertyValueProvider);
         }
 
-
         SystemEnvValueProvider systemEnvValueProvider = new SystemEnvValueProvider();
         valueProviders.add(systemEnvValueProvider);
 
